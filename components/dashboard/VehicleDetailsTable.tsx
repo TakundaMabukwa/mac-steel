@@ -46,6 +46,7 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [isUpdatingReason, setIsUpdatingReason] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [showAllVehicles, setShowAllVehicles] = useState(false);
 
   // Fetch data on initial page load - only run once when component mounts
   useEffect(() => {
@@ -135,6 +136,14 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
 
   // Calculate stats from vehicle data
   const totalVehicles = vehicles.length;
+  const vehiclesWithStartTime = vehicles.filter(vehicle => vehicle.start_time).length;
+  const vehiclesWithoutStartTime = totalVehicles - vehiclesWithStartTime;
+  
+  // Filter vehicles based on toggle state
+  const filteredVehicles = showAllVehicles 
+    ? vehicles 
+    : vehicles.filter(vehicle => vehicle.start_time);
+  
   const departingBeforeExitTime = vehicles.filter(vehicle => {
     if (!vehicle.start_time) return false;
     const startTime = new Date(vehicle.start_time);
@@ -142,7 +151,7 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
     return startTime < exitTime;
   }).length;
   
-  const onTimePercentage = totalVehicles > 0 ? Math.round(((totalVehicles - departingBeforeExitTime) / totalVehicles) * 100) : 0;
+  const onTimePercentage = vehiclesWithStartTime > 0 ? Math.round(((vehiclesWithStartTime - departingBeforeExitTime) / vehiclesWithStartTime) * 100) : 0;
   const notOnTimePercentage = 100 - onTimePercentage;
 
   // Helper function to determine if vehicle is late
@@ -253,6 +262,18 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
           )}
         </div>
         <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="show-all-vehicles"
+              checked={showAllVehicles}
+              onChange={(e) => setShowAllVehicles(e.target.checked)}
+              className="border-gray-300 rounded focus:ring-blue-500 text-blue-600"
+            />
+            <label htmlFor="show-all-vehicles" className="text-gray-600 text-sm">
+              Show all vehicles (including those without start times)
+            </label>
+          </div>
           <Button 
             onClick={fetchVehicles} 
             size="sm" 
@@ -274,11 +295,14 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center font-medium text-gray-600 text-sm">
               <Car className="mr-2 w-4 h-4" />
-              Number of Vehicles
+              Total Vehicles
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="font-bold text-gray-900 text-2xl">{totalVehicles}</div>
+            <div className="mt-1 text-gray-500 text-xs">
+              {vehiclesWithStartTime} with start time, {vehiclesWithoutStartTime} without
+            </div>
           </CardContent>
         </Card>
         
@@ -291,6 +315,9 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
           </CardHeader>
           <CardContent>
             <div className="font-bold text-gray-900 text-2xl">{departingBeforeExitTime}</div>
+            <div className="mt-1 text-gray-500 text-xs">
+              {vehiclesWithStartTime > 0 ? Math.round((departingBeforeExitTime / vehiclesWithStartTime) * 100) : 0}% of vehicles with start time
+            </div>
           </CardContent>
         </Card>
         
@@ -369,14 +396,14 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {vehicles.length === 0 ? (
+              {filteredVehicles.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-4 text-gray-500 text-center">
                     No vehicles found for this cost center.
                   </td>
                 </tr>
               ) : (
-                vehicles.map((vehicle) => {
+                filteredVehicles.map((vehicle) => {
                   const isLate = isVehicleLate(vehicle);
                   return (
                     <tr key={vehicle.id} className="hover:bg-gray-50">

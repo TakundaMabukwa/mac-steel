@@ -153,3 +153,40 @@ export async function getLateVehicleReportsByCostCenterAndDate(
     throw new Error('Failed to fetch late vehicle reports');
   }
 }
+
+export async function getAllVehiclesWithStartTime(accountNumber: string): Promise<Vehicle[]> {
+  try {
+    const supabase = await createClient();
+    
+    // First try to get vehicles from late_vehicles_reports table which has more comprehensive data
+    const { data: reportsData, error: reportsError } = await supabase
+      .from('late_vehicles_reports')
+      .select('*')
+      .eq('new_account_number', accountNumber)
+      .not('start_time', 'is', null)
+      .order('start_time', { ascending: false });
+
+    if (reportsError) {
+      console.error('Error fetching from late_vehicles_reports:', reportsError);
+      // Fallback to late_vehicles table
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('late_vehicles')
+        .select('*')
+        .eq('new_account_number', accountNumber)
+        .not('start_time', 'is', null)
+        .order('start_time', { ascending: false });
+
+      if (fallbackError) {
+        console.error('Error fetching from late_vehicles:', fallbackError);
+        throw new Error('Failed to fetch vehicles');
+      }
+
+      return fallbackData || [];
+    }
+
+    return reportsData || [];
+  } catch (error) {
+    console.error('Error in getAllVehiclesWithStartTime:', error);
+    throw new Error('Failed to fetch vehicles with start times');
+  }
+}

@@ -33,3 +33,25 @@ export async function getCostCenters(): Promise<MacSteelCostCenter[]> {
     throw new Error('Failed to fetch cost centers');
   }
 }
+
+export async function updateCostCenterExitTime(
+  accountNumber: string, 
+  newExitTime: string
+): Promise<void> {
+  try {
+    const supabase = await createClient();
+    
+    const { error } = await supabase
+      .from('mac_steel')
+      .update({ exit_time: newExitTime })
+      .eq('new_account_number', accountNumber);
+
+    if (error) {
+      console.error('Error updating exit time:', error);
+      throw new Error('Failed to update exit time');
+    }
+  } catch (error) {
+    console.error('Error in updateCostCenterExitTime:', error);
+    throw new Error('Failed to update exit time');
+  }
+}

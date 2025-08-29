@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getCostCenters, MacSteelCostCenter } from '@/lib/actions/costCenters';
-import { getVehiclesByAccountNumber, Vehicle } from '@/lib/actions/vehicles';
+import { getAllVehiclesWithStartTime, Vehicle } from '@/lib/actions/vehicles';
 
 interface CostCenterContextType {
   costCenters: MacSteelCostCenter[];
@@ -42,7 +42,7 @@ export function CostCenterProvider({ children }: { children: ReactNode }) {
     setIsVehicleLoading(prev => ({ ...prev, [accountNumber]: true }));
 
     try {
-      const vehicles = await getVehiclesByAccountNumber(accountNumber);
+      const vehicles = await getAllVehiclesWithStartTime(accountNumber);
       return vehicles;
     } catch (err) {
       console.error('Error fetching vehicles:', err);
