@@ -468,6 +468,172 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
           ))
         )}
       </div>
+
+      {/* Active vs Stopped Vehicles Line Graph */}
+      <div className="bg-white p-6 border border-gray-200 rounded-lg">
+        <div className="mb-6">
+          <h3 className="font-semibold text-gray-900 text-lg">Vehicle Activity Over Time</h3>
+          <p className="text-gray-600 text-sm">Active vs Stopped vehicles trend</p>
+        </div>
+        
+        <div className="w-full h-80">
+          <svg width="100%" height="100%" viewBox="0 0 800 280" className="overflow-visible">
+            {/* Grid lines */}
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#f3f4f6" strokeWidth="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+            
+            {/* Y-axis line (left vertical line) */}
+            <line x1="50" y1="30" x2="50" y2="220" stroke="#d1d5db" strokeWidth="2" />
+            
+            {/* X-axis line (bottom horizontal line) */}
+            <line x1="50" y1="220" x2="750" y2="220" stroke="#d1d5db" strokeWidth="2" />
+            
+            {/* X-axis time labels */}
+            {(() => {
+              const timeLabels = [
+                '6:00 AM', '8:00 AM', '10:00 AM', '12:00 PM', 
+                '2:00 PM', '4:00 PM', '6:00 PM', '8:00 PM'
+              ];
+              return timeLabels.map((time, index) => {
+                const x = (index / (timeLabels.length - 1)) * 700 + 50;
+                return (
+                  <text
+                    key={index}
+                    x={x}
+                    y="250"
+                    className="font-medium text-gray-500 text-xs"
+                    textAnchor="middle"
+                  >
+                    {time}
+                  </text>
+                );
+              });
+            })()}
+            
+            {/* Generate sample data points for demonstration */}
+            {(() => {
+              const dataPoints = 20;
+              const activeData = [];
+              const stoppedData = [];
+              const totalData = [];
+              
+              for (let i = 0; i < dataPoints; i++) {
+                const x = (i / (dataPoints - 1)) * 700 + 50;
+                const activeY = 140 - (Math.random() * 60 + 20); // Random active vehicles between 20-80, positioned higher
+                const stoppedY = 140 - (Math.random() * 40 + 10); // Random stopped vehicles between 10-50, positioned higher
+                const totalY = 140 - (activeY + stoppedY - 140); // Total is sum, positioned higher
+                
+                activeData.push({ x, y: activeY });
+                stoppedData.push({ x, y: stoppedY });
+                totalData.push({ x, y: totalY });
+              }
+              
+              return (
+                <>
+                  {/* Active vehicles line */}
+                  <polyline
+                    points={activeData.map(d => `${d.x},${d.y}`).join(' ')}
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  
+                  {/* Stopped vehicles line */}
+                  <polyline
+                    points={stoppedData.map(d => `${d.x},${d.y}`).join(' ')}
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  
+                  {/* Total vehicles line */}
+                  <polyline
+                    points={totalData.map(d => `${d.x},${d.y}`).join(' ')}
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="5,5"
+                  />
+                  
+                  {/* Data points for active vehicles */}
+                  {activeData.map((point, index) => (
+                    <circle
+                      key={`active-${index}`}
+                      cx={point.x}
+                      cy={point.y}
+                      r="3"
+                      fill="#10b981"
+                      className="transition-all duration-200 hover:r-4"
+                    />
+                  ))}
+                  
+                  {/* Data points for stopped vehicles */}
+                  {stoppedData.map((point, index) => (
+                    <circle
+                      key={`stopped-${index}`}
+                      cx={point.x}
+                      cy={point.y}
+                      r="3"
+                      fill="#f59e0b"
+                      className="transition-all duration-200 hover:r-4"
+                    />
+                  ))}
+                  
+                  {/* Data points for total vehicles */}
+                  {totalData.map((point, index) => (
+                    <circle
+                      key={`total-${index}`}
+                      cx={point.x}
+                      cy={point.y}
+                      r="2"
+                      fill="#3b82f6"
+                      className="transition-all duration-200 hover:r-3"
+                    />
+                  ))}
+                </>
+              );
+            })()}
+            
+            {/* Legend with better spacing */}
+            <g transform="translate(50, 200)">
+              <rect x="0" y="0" width="12" height="12" fill="#10b981" rx="2" />
+              <text x="20" y="10" className="font-medium text-gray-700 text-xs">Active Vehicles</text>
+              
+              <rect x="120" y="0" width="12" height="12" fill="#f59e0b" rx="2" />
+              <text x="140" y="10" className="font-medium text-gray-700 text-xs">Stopped Vehicles</text>
+              
+              <rect x="240" y="0" width="12" height="12" fill="#3b82f6" rx="2" />
+              <text x="260" y="10" className="font-medium text-gray-700 text-xs">Total Vehicles</text>
+            </g>
+          </svg>
+        </div>
+        
+        {/* Current Status Summary with better spacing */}
+        <div className="gap-6 grid grid-cols-3 mt-8 text-center">
+          <div className="bg-green-50 p-4 border border-green-200 rounded-lg">
+            <div className="mb-2 font-bold text-green-600 text-2xl">{activeVehicles}</div>
+            <div className="text-green-700 text-sm">Currently Active</div>
+          </div>
+          <div className="bg-orange-50 p-4 border border-orange-200 rounded-lg">
+            <div className="mb-2 font-bold text-orange-600 text-2xl">{stoppedVehicles}</div>
+            <div className="text-orange-700 text-sm">Currently Stopped</div>
+          </div>
+          <div className="bg-blue-50 p-4 border border-blue-200 rounded-lg">
+            <div className="mb-2 font-bold text-blue-600 text-2xl">{totalVehicles}</div>
+            <div className="text-blue-700 text-sm">Total Fleet</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
