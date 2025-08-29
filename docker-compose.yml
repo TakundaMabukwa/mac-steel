@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  macsteel-app:
+    build: .
+    container_name: macsteel-nextjs
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
