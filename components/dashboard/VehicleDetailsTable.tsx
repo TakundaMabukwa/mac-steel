@@ -62,6 +62,8 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
       
       try {
         const vehicleData = await getVehiclesForCostCenter(costCenter.new_account_number);
+        console.log('Fetched vehicles:', vehicleData);
+        console.log('Vehicle statuses:', vehicleData.map(v => ({ plate: v.plate, status: v.status })));
         setVehicles(vehicleData);
         setLastUpdate(new Date());
       } catch (err) {
@@ -82,9 +84,11 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
     setError(null);
     
     try {
-      const vehicleData = await getVehiclesForCostCenter(costCenter.new_account_number);
-      setVehicles(vehicleData);
-      setLastUpdate(new Date());
+              const vehicleData = await getVehiclesForCostCenter(costCenter.new_account_number);
+        console.log('Refreshed vehicles:', vehicleData);
+        console.log('Vehicle statuses:', vehicleData.map(v => ({ plate: v.plate, status: v.status })));
+        setVehicles(vehicleData);
+        setLastUpdate(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch vehicles');
     } finally {
@@ -144,6 +148,14 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
     ? vehicles 
     : vehicles.filter(vehicle => vehicle.start_time);
   
+  // Calculate percentages based on actual status field
+  const onTimeVehicles = vehicles.filter(vehicle => vehicle.status === 'On Time' || vehicle.status === 'on_time').length;
+  const lateVehicles = vehicles.filter(vehicle => vehicle.status === 'Late' || vehicle.status === 'late').length;
+  
+  console.log('Status-based counts:', { onTimeVehicles, lateVehicles });
+  console.log('All vehicle statuses:', vehicles.map(v => ({ plate: v.plate, status: v.status })));
+  
+  // Fallback to time-based calculation if status is not available
   const departingBeforeExitTime = vehicles.filter(vehicle => {
     if (!vehicle.start_time) return false;
     const startTime = new Date(vehicle.start_time);
@@ -151,11 +163,23 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
     return startTime < exitTime;
   }).length;
   
-  const onTimePercentage = vehiclesWithStartTime > 0 ? Math.round(((vehiclesWithStartTime - departingBeforeExitTime) / vehiclesWithStartTime) * 100) : 0;
+  // Use status-based calculation if available, otherwise fall back to time-based
+  const onTimePercentage = onTimeVehicles > 0 || lateVehicles > 0 
+    ? Math.round((onTimeVehicles / (onTimeVehicles + lateVehicles)) * 100)
+    : (vehiclesWithStartTime > 0 ? Math.round(((vehiclesWithStartTime - departingBeforeExitTime) / vehiclesWithStartTime) * 100) : 0);
+  
   const notOnTimePercentage = 100 - onTimePercentage;
+  
+  console.log('Calculated percentages:', { onTimePercentage, notOnTimePercentage, method: onTimeVehicles > 0 || lateVehicles > 0 ? 'status-based' : 'time-based' });
 
   // Helper function to determine if vehicle is late
   const isVehicleLate = (vehicle: Vehicle): boolean => {
+    // First check if status field is available
+    if (vehicle.status) {
+      return vehicle.status === 'Late' || vehicle.status === 'late';
+    }
+    
+    // Fallback to time-based calculation if status is not available
     if (!vehicle.start_time) return false;
     const startTime = new Date(vehicle.start_time);
     const exitTime = costCenter.exit_time ? new Date(`2000-01-01T${costCenter.exit_time}`) : new Date('2000-01-01T09:00:00');
@@ -408,16 +432,31 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
                   return (
                     <tr key={vehicle.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {isLate ? (
+                        {vehicle.status ? (
+                          // Show actual status from database
                           <div className="flex items-center space-x-2">
-                            <div className="bg-red-500 rounded-full w-3 h-3" />
-                            <span className="font-medium text-red-600 text-xs">Late</span>
+                            <div className={`rounded-full w-3 h-3 ${
+                              vehicle.status.toLowerCase() === 'late' ? 'bg-red-500' : 'bg-green-500'
+                            }`} />
+                            <span className={`font-medium text-xs ${
+                              vehicle.status.toLowerCase() === 'late' ? 'text-red-600' : 'text-green-600'
+                            }`}>
+                              {vehicle.status}
+                            </span>
                           </div>
                         ) : (
-                          <div className="flex items-center space-x-2">
-                            <div className="bg-green-500 rounded-full w-3 h-3" />
-                            <span className="font-medium text-green-600 text-xs">On Time</span>
-                          </div>
+                          // Fallback to calculated status
+                          isLate ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="bg-red-500 rounded-full w-3 h-3" />
+                              <span className="font-medium text-red-600 text-xs">Late</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <div className="bg-green-500 rounded-full w-3 h-3" />
+                              <span className="font-medium text-green-600 text-xs">On Time</span>
+                            </div>
+                          )
                         )}
                       </td>
                       <td className="px-6 py-4 font-medium text-gray-900 text-sm whitespace-nowrap">
