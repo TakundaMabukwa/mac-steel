@@ -8,6 +8,7 @@ import { TabNavigation } from '@/components/dashboard/TabNavigation';
 import { StartTimeDashboard } from '@/components/dashboard/StartTimeDashboard';
 import { StartTimeDashboardWithLookup } from '@/components/dashboard/StartTimeDashboardWithLookup';
 import { UtilisationDashboard } from '@/components/dashboard/UtilisationDashboard';
+import { ReportingDashboard } from '@/components/dashboard/ReportingDashboard';
 import { CostCenterProvider } from '@/lib/context/CostCenterContext';
 
 export default function ProtectedPage() {
@@ -49,12 +50,7 @@ export default function ProtectedPage() {
       case 'utilisation-admin':
         return <UtilisationDashboard />;
       case 'reporting':
-        return (
-          <div className="p-8 text-gray-500 text-center">
-            <h2 className="mb-2 font-semibold text-xl">Reporting Dashboard</h2>
-            <p>Reports and analytics will be displayed here.</p>
-          </div>
-        );
+        return <ReportingDashboard />;
       case 'drivers':
         return (
           <div className="p-8 text-gray-500 text-center">

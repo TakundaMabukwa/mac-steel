@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, BarChart3 } from 'lucide-react';
+import { Clock, BarChart3, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TabNavigationProps {
@@ -34,12 +34,12 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
     //   icon: BarChart3,
     //   color: 'text-green-600'
     // },
-    // {
-    //   id: 'reporting',
-    //   label: 'Reporting',
-    //   icon: FileText,
-    //   color: 'text-blue-600'
-    // },
+    {
+      id: 'reporting',
+      label: 'Reporting',
+      icon: FileText,
+      color: 'text-blue-600'
+    },
     // {
     //   id: 'drivers',
     //   label: 'Drivers',
@@ -56,13 +56,13 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex items-center space-x-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
+              "flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors",
               activeTab === tab.id
                 ? "border-blue-600 text-blue-600 bg-blue-50"
                 : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
             )}
           >
-            <tab.icon className={cn("h-4 w-4", activeTab === tab.id ? tab.color : "text-gray-400")} />
+            <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? tab.color : "text-gray-400")} />
             <span>{tab.label}</span>
           </button>
         ))}
