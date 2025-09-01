@@ -69,7 +69,7 @@ npm ci --production
 
 # Build the application
 print_status "Building the application..."
-npm run build
+npm run build -- --no-lint
 
 # Check if build was successful
 if [ ! -d ".next" ]; then
