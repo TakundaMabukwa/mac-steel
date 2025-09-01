@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -15,7 +15,7 @@ import { ReportingDashboard } from '@/components/dashboard/ReportingDashboard';
 import { CostCenterProvider } from '@/lib/context/CostCenterContext';
 import { StartTimeReportsProvider } from '@/lib/context/StartTimeReportsContext';
 
-export default function ProtectedPage() {
+function ProtectedPageContent() {
   const [activeTab, setActiveTab] = useState('start-time');
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -134,5 +134,13 @@ export default function ProtectedPage() {
         </div>
       </div>
     </CostCenterProvider>
+  );
+}
+
+export default function ProtectedPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProtectedPageContent />
+    </Suspense>
   );
 }

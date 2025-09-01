@@ -78,10 +78,13 @@ export function VehiclesDashboard() {
   }
 
   // If a cost center is selected, show vehicle details
-  if (selectedCostCenter) {
+  if (selectedCostCenter && selectedCostCenter.new_account_number) {
     return (
       <VehicleDetailsView
-        costCenter={selectedCostCenter}
+        costCenter={{
+          new_account_number: selectedCostCenter.new_account_number,
+          company: selectedCostCenter.company
+        }}
         onBack={() => setSelectedCostCenter(null)}
       />
     );

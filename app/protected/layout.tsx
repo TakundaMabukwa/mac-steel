@@ -9,7 +9,7 @@ export default function ProtectedLayout({
     <main className="flex flex-col w-full min-h-screen">
       <div className="flex flex-col flex-1 w-full">
         <nav>
-          <Header />
+          <Header isSidebarCollapsed={false} />
         </nav>
         <div className="flex-1 w-full">
           {children}

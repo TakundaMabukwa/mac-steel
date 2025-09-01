@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Gauge, Shield, Key, Thermometer, Clock, RefreshCw, Car, Navigation, Zap, Map, Wifi, WifiOff } from 'lucide-react';
+import { MapPin, Gauge, Shield, Key, Thermometer, Clock, RefreshCw, Car, Navigation, Zap, Wifi, WifiOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getLiveVehiclesByAccountNumber, LiveVehicle } from '@/lib/actions/vehicles';
 import { MacSteelCostCenter } from '@/lib/actions/costCenters';
-import { VehicleLocationMap } from './VehicleLocationMap';
+
 import { createClient } from '@/lib/supabase/client';
 
 interface LiveVehicleDetailsProps {
@@ -22,9 +22,8 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'stopped'>('all');
   const [isFiltering, setIsFiltering] = useState(false);
-  const [selectedVehicleForMap, setSelectedVehicleForMap] = useState<LiveVehicle | null>(null);
-  const [isMapOpen, setIsMapOpen] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+
+
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [updatedVehicleIds, setUpdatedVehicleIds] = useState<Set<number>>(new Set());
   const hasInitialized = useRef(false);
@@ -96,10 +95,8 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
           .subscribe((status) => {
             console.log('Subscription status:', status);
             if (status === 'SUBSCRIBED') {
-              setIsConnected(true);
               setConnectionStatus('connected');
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              setIsConnected(false);
               setConnectionStatus('disconnected');
             }
           });
@@ -455,17 +452,11 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
             </div>
           ) : (
             filteredVehicles.map((vehicle) => {
-              const hasValidCoordinates = vehicle.latitude && vehicle.longitude && 
-                parseFloat(vehicle.latitude) !== 0 && parseFloat(vehicle.longitude) !== 0;
               
               return (
               <Card 
                 key={vehicle.id} 
-                className={`transition-all duration-500 border border-gray-200 ${
-                  hasValidCoordinates 
-                    ? 'bg-white hover:shadow-lg' 
-                    : 'bg-gray-100 opacity-75'
-                } ${
+                className={`transition-all duration-500 border border-gray-200 bg-white hover:shadow-lg ${
                   updatedVehicleIds.has(vehicle.id) 
                     ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg' 
                     : ''
@@ -480,11 +471,6 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
                     <div className="flex items-center space-x-2 mt-1">
                       <Shield className="mr-1 w-4 h-4 text-gray-400" />
                       <span className="text-gray-500 text-xs">Secure</span>
-                      {!hasValidCoordinates && (
-                        <span className="inline-flex items-center bg-red-100 px-2 py-0.5 rounded-full font-medium text-red-800 text-xs">
-                          No GPS
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -592,26 +578,7 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
                   </div>
                 )}
                 
-                {/* View Current Location Button */}
-                <div className="pt-4 border-gray-100 border-t">
-                  <Button
-                    onClick={() => {
-                      setSelectedVehicleForMap(vehicle);
-                      setIsMapOpen(true);
-                    }}
-                    size="sm"
-                    disabled={!hasValidCoordinates}
-                    className={`w-full text-white ${
-                      hasValidCoordinates 
-                        ? 'bg-blue-600 hover:bg-blue-700' 
-                        : 'bg-gray-400 cursor-not-allowed'
-                    }`}
-                    title={hasValidCoordinates ? 'View vehicle location on map' : 'No GPS coordinates available'}
-                  >
-                    <Map className="mr-2 w-4 h-4" />
-                    {hasValidCoordinates ? 'View Current Location' : 'No Location Data'}
-                  </Button>
-                </div>
+
               </CardContent>
             </Card>
             );
@@ -664,21 +631,21 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
             
             {/* Bar Chart */}
             {(() => {
-              const maxValue = Math.max(activeVehicles, stoppedVehicles, totalVehicles);
+              const maxValue = Math.max(activeVehicles, stoppedVehicles, totalVehicles, 1); // Ensure minimum value of 1 to prevent division by zero
               const barWidth = 120;
               const barSpacing = 40;
               const startX = 150;
               
               // Active Vehicles Bar
-              const activeHeight = (activeVehicles / maxValue) * 180;
+              const activeHeight = maxValue > 0 ? (activeVehicles / maxValue) * 180 : 0;
               const activeY = 220 - activeHeight;
               
               // Stopped Vehicles Bar
-              const stoppedHeight = (stoppedVehicles / maxValue) * 180;
+              const stoppedHeight = maxValue > 0 ? (stoppedVehicles / maxValue) * 180 : 0;
               const stoppedY = 220 - stoppedHeight;
               
               // Total Vehicles Bar
-              const totalHeight = (totalVehicles / maxValue) * 180;
+              const totalHeight = maxValue > 0 ? (totalVehicles / maxValue) * 180 : 0;
               const totalY = 220 - totalHeight;
               
               return (
@@ -771,15 +738,7 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
         </div>
       </div>
       
-      {/* Vehicle Location Map Dialog */}
-      <VehicleLocationMap
-        vehicle={selectedVehicleForMap}
-        isOpen={isMapOpen}
-        onClose={() => {
-          setIsMapOpen(false);
-          setSelectedVehicleForMap(null);
-        }}
-      />
+
     </div>
   );
 }

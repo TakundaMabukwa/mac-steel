@@ -49,7 +49,7 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
-  const [updatedVehicleIds, setUpdatedVehicleIds] = useState<Set<string>>(new Set());
+  const [updatedVehicleIds, setUpdatedVehicleIds] = useState<Set<number>>(new Set());
   const supabase = createClient();
 
   // Set up real-time subscription and initial data fetch
