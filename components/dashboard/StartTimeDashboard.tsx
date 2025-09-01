@@ -12,6 +12,7 @@ import { MacSteelCostCenter } from '@/lib/actions/costCenters';
 import { updateCostCenterExitTime } from '@/lib/actions/costCenters';
 import { VehicleDetailsTable } from './VehicleDetailsTable';
 import { LateVehicleReports } from './LateVehicleReports';
+import { CompactTable } from '@/components/shared/CompactTable';
 
 export function StartTimeDashboard() {
   const { costCenters, isLoading, error } = useCostCenters();
@@ -51,12 +52,8 @@ export function StartTimeDashboard() {
     try {
       await updateCostCenterExitTime(selectedCostCenter.new_account_number, newExitTime);
       
-      // Update local state to reflect the change
-      setSelectedCostCenter(prev => prev ? {
-        ...prev,
-        exit_time: newExitTime
-      } : null);
-      
+      // Update local state
+      setSelectedCostCenter(prev => prev ? { ...prev, exit_time: newExitTime } : null);
       setIsExitTimeDialogOpen(false);
     } catch (err) {
       setUpdateError(err instanceof Error ? err.message : 'Failed to update exit time');
@@ -65,25 +62,40 @@ export function StartTimeDashboard() {
     }
   };
 
-  // Show loading skeleton while fetching data
+  const toggleSidebar = () => {
+    // This would be handled by the parent component
+  };
+
   if (isLoading) {
-    return <CostCenterSkeleton />;
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <Button onClick={toggleSidebar} variant="outline" className="hover:bg-gray-50 border-gray-300 text-gray-700">
+            ← Back to Cost Centers
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <CostCenterSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  // Show error state
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="font-semibold text-gray-900 text-xl">Start Time Dashboard</h2>
+          <Button onClick={toggleSidebar} variant="outline" className="hover:bg-gray-50 border-gray-300 text-gray-700">
+            ← Back to Cost Centers
+          </Button>
         </div>
+        
         <div className="bg-red-50 p-6 border border-red-200 rounded-lg text-center">
           <p className="text-red-600">Error loading cost centers: {error}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="mt-4"
-            variant="outline"
-          >
+          <Button onClick={() => window.location.reload()} className="mt-4" variant="outline">
             Retry
           </Button>
         </div>
@@ -110,37 +122,21 @@ export function StartTimeDashboard() {
               </p>
             )}
           </div>
-          <div className="flex items-center space-x-3">
+          
+          <div className="flex items-center space-x-4">
             <Button
               onClick={openExitTimeDialog}
-              size="sm"
-              variant="outline"
-              className="flex items-center space-x-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              <Clock className="w-4 h-4" />
-              <span>Update Exit Time</span>
+              <Clock className="mr-2 w-4 h-4" />
+              Update Exit Time
             </Button>
-            <div className="flex bg-gray-100 p-1 rounded-lg">
-              <Button
-                variant={viewMode === 'vehicles' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('vehicles')}
-                className="flex items-center space-x-2"
-              >
-                <Eye className="w-4 h-4" />
-                <span>Vehicle Details</span>
-              </Button>
-              <Button
-                variant={viewMode === 'reports' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('reports')}
-                className="flex items-center space-x-2"
-              >
-                <FileText className="w-4 h-4" />
-                <span>Late Reports</span>
-              </Button>
-            </div>
-            <Button onClick={handleBackToTable} variant="outline">
+            
+            <Button
+              onClick={handleBackToTable}
+              variant="outline"
+              className="hover:bg-gray-50 border-gray-300 text-gray-700"
+            >
               Back to Cost Centers
             </Button>
           </div>
@@ -170,23 +166,18 @@ export function StartTimeDashboard() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="exit-time" className="block mb-2 font-medium text-gray-700 text-sm">
-                  New Exit Time *
+                <Label htmlFor="exitTime" className="block mb-2 font-medium text-gray-700 text-sm">
+                  Exit Time
                 </Label>
                 <Input
-                  id="exit-time"
+                  id="exitTime"
                   type="time"
                   value={newExitTime}
                   onChange={(e) => setNewExitTime(e.target.value)}
                   className="w-full"
-                  required
                 />
-                <p className="mt-1 text-gray-500 text-xs">
-                  Current exit time: {selectedCostCenter?.exit_time || '09:00:00'}
-                </p>
               </div>
               
-              {/* Error message for update failures */}
               {updateError && (
                 <div className="bg-red-50 p-3 border border-red-200 rounded-lg">
                   <p className="text-red-600 text-sm">{updateError}</p>
@@ -196,11 +187,7 @@ export function StartTimeDashboard() {
               <div className="flex justify-end space-x-3">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setIsExitTimeDialogOpen(false);
-                    setNewExitTime('');
-                    setUpdateError(null);
-                  }}
+                  onClick={() => setIsExitTimeDialogOpen(false)}
                   disabled={isUpdatingExitTime}
                 >
                   Cancel
@@ -220,50 +207,61 @@ export function StartTimeDashboard() {
     );
   }
 
-  // Show cost centers table (initial view)
+  // Show cost centers table
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="font-semibold text-gray-900 text-xl">Start Time Dashboard</h2>
-        <div className="text-gray-600 text-sm">
-          Select a cost center to view details
+        <div>
+          <h1 className="font-semibold text-gray-900 text-2xl">Start Time Dashboard</h1>
+          <p className="text-gray-600 text-sm">Manage cost centers and view vehicle details</p>
         </div>
       </div>
-      
-      {/* Cost Centers Table */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 p-4 border-gray-200 border-b">
-          <h3 className="font-semibold text-gray-900 text-lg">Cost Centers</h3>
-        </div>
-        <div className="p-4">
-          <div className="space-y-3">
-            {costCenters.map((costCenter) => (
-              <div key={costCenter.id} className="flex justify-between items-center hover:bg-gray-50 p-4 border border-gray-200 rounded-lg">
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900">
-                    {costCenter.company || 'Unknown Company'}
-                  </div>
-                  <div className="text-gray-600 text-sm">
-                    Geozone: {costCenter.geozone}
-                  </div>
-                  {costCenter.exit_time && (
-                    <div className="text-gray-600 text-sm">
-                      Exit Time: {costCenter.exit_time}
-                    </div>
-                  )}
+
+      <CompactTable
+        data={costCenters}
+        columns={[
+          {
+            key: 'company',
+            label: 'Company',
+            align: 'left' as const,
+            render: (item: MacSteelCostCenter) => (
+              <div>
+                <div className="font-medium text-gray-900 text-sm">
+                  {item.company || 'Unknown Company'}
                 </div>
-                <Button 
-                  onClick={() => handleViewCostCenter(costCenter)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Eye className="mr-2 w-4 h-4" />
-                  View Details
-                </Button>
+                <div className="text-gray-500 text-xs">
+                  {item.new_account_number}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
+            )
+          },
+          {
+            key: 'geozone',
+            label: 'Geozone',
+            align: 'left' as const,
+            render: (item: MacSteelCostCenter) => (
+              <span className="text-gray-600 text-sm">
+                {item.geozone || 'N/A'}
+              </span>
+            )
+          },
+          {
+            key: 'exit_time',
+            label: 'Exit Time',
+            align: 'left' as const,
+            render: (item: MacSteelCostCenter) => (
+              <span className="text-gray-600 text-sm">
+                {item.exit_time || 'Not set'}
+              </span>
+            )
+          }
+        ]}
+        title="Cost Centers"
+        searchPlaceholder="Search cost centers..."
+        showDownload={true}
+        showColumns={true}
+        onViewCostCenter={handleViewCostCenter}
+      />
     </div>
   );
 }

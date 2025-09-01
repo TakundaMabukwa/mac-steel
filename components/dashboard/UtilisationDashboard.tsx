@@ -6,10 +6,10 @@ import { useCostCenters } from '@/lib/context/CostCenterContext';
 import { CostCenterSkeleton } from './CostCenterSkeleton';
 import { MacSteelCostCenter } from '@/lib/actions/costCenters';
 import { LiveVehicleDetails } from './LiveVehicleDetails';
+import { CompactTable } from '@/components/shared/CompactTable';
 
 export function UtilisationDashboard() {
-  const { costCenters, isLoading, error } = useCostCenters();
-  const [selectedCostCenter, setSelectedCostCenter] = useState<MacSteelCostCenter | null>(null);
+  const { costCenters, isLoading, error, selectedCostCenter, setSelectedCostCenter } = useCostCenters();
 
   const handleViewCostCenter = (costCenter: MacSteelCostCenter) => {
     setSelectedCostCenter(costCenter);
@@ -61,33 +61,29 @@ export function UtilisationDashboard() {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 p-4 border-gray-200 border-b">
-          <h3 className="font-semibold text-gray-900 text-lg">Cost Centers</h3>
-        </div>
-        <div className="p-4">
-          <div className="space-y-3">
-            {costCenters.map((costCenter) => (
-              <div key={costCenter.id} className="flex justify-between items-center hover:bg-gray-50 p-4 border border-gray-200 rounded-lg">
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900">
-                    {costCenter.company || 'Unknown Company'}
-                  </div>
-                  <div className="text-gray-600 text-sm">
-                    Geozone: {costCenter.geozone}
-                  </div>
-                </div>
-                <Button
-                  onClick={() => handleViewCostCenter(costCenter)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  View Details
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Cost Centers Table using CompactTable */}
+      <CompactTable
+        data={costCenters}
+        columns={[
+          {
+            key: 'company',
+            label: 'Company',
+            align: 'left' as const,
+            render: (item: MacSteelCostCenter) => item.company || 'Unknown Company'
+          },
+          {
+            key: 'geozone',
+            label: 'Geozone',
+            align: 'left' as const,
+            render: (item: MacSteelCostCenter) => item.geozone
+          }
+        ]}
+        title="Cost Centers"
+        searchPlaceholder="Search cost centers..."
+        showDownload={true}
+        showColumns={true}
+        onViewCostCenter={handleViewCostCenter}
+      />
     </div>
   );
 }

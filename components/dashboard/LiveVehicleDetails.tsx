@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Gauge, Shield, Key, Thermometer, Clock, RefreshCw, Car, Navigation, Zap } from 'lucide-react';
+import { MapPin, Gauge, Shield, Key, Thermometer, Clock, RefreshCw, Car, Navigation, Zap, Map, Wifi, WifiOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getLiveVehiclesByAccountNumber, LiveVehicle } from '@/lib/actions/vehicles';
 import { MacSteelCostCenter } from '@/lib/actions/costCenters';
+import { VehicleLocationMap } from './VehicleLocationMap';
+import { createClient } from '@/lib/supabase/client';
 
 interface LiveVehicleDetailsProps {
   costCenter: MacSteelCostCenter;
@@ -20,32 +22,109 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'stopped'>('all');
   const [isFiltering, setIsFiltering] = useState(false);
+  const [selectedVehicleForMap, setSelectedVehicleForMap] = useState<LiveVehicle | null>(null);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [updatedVehicleIds, setUpdatedVehicleIds] = useState<Set<number>>(new Set());
   const hasInitialized = useRef(false);
+  const supabase = createClient();
 
-  // Fetch data on initial page load - only run once when component mounts
+  // Set up real-time subscription and initial data fetch
   useEffect(() => {
     if (hasInitialized.current) return;
     
     hasInitialized.current = true;
     
-    const initialFetch = async () => {
+    const setupRealTimeData = async () => {
       if (!costCenter.new_account_number) return;
       
       setIsLoading(true);
       setError(null);
+      setConnectionStatus('connecting');
       
       try {
+        // Initial data fetch
         const vehicleData = await getLiveVehiclesByAccountNumber(costCenter.new_account_number);
         setVehicles(vehicleData);
         setLastUpdate(new Date());
+        
+        // Set up real-time subscription
+        const channel = supabase
+          .channel('live_vehicle_data_changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'live_vehicle_data',
+              filter: `new_account_number=eq.${costCenter.new_account_number}`
+            },
+            (payload) => {
+              console.log('Real-time update received:', payload);
+              
+              if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                const newVehicle = payload.new as LiveVehicle;
+                setVehicles(prevVehicles => {
+                  // Remove existing vehicle with same ID and add updated one
+                  const filtered = prevVehicles.filter(v => v.id !== newVehicle.id);
+                  return [...filtered, newVehicle].sort((a, b) => 
+                    new Date(b.loctime || '').getTime() - new Date(a.loctime || '').getTime()
+                  );
+                });
+                
+                // Add visual update indicator
+                setUpdatedVehicleIds(prev => new Set([...prev, newVehicle.id]));
+                setTimeout(() => {
+                  setUpdatedVehicleIds(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(newVehicle.id);
+                    return newSet;
+                  });
+                }, 2000); // Remove highlight after 2 seconds
+                
+                setLastUpdate(new Date());
+              } else if (payload.eventType === 'DELETE') {
+                const deletedVehicle = payload.old as LiveVehicle;
+                setVehicles(prevVehicles => 
+                  prevVehicles.filter(v => v.id !== deletedVehicle.id)
+                );
+                setLastUpdate(new Date());
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+              setIsConnected(true);
+              setConnectionStatus('connected');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              setIsConnected(false);
+              setConnectionStatus('disconnected');
+            }
+          });
+        
+        // Store channel reference for cleanup
+        return () => {
+          supabase.removeChannel(channel);
+        };
+        
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch live vehicles');
+        setConnectionStatus('disconnected');
       } finally {
         setIsLoading(false);
       }
     };
 
-    initialFetch();
+    const cleanup = setupRealTimeData();
+    
+    // Cleanup function
+    return () => {
+      if (cleanup) {
+        cleanup.then(cleanupFn => cleanupFn && cleanupFn());
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - will only run once
 
@@ -194,20 +273,49 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
             Geozone: {costCenter.geozone}
           </p>
           {lastUpdate && (
-            <p className="mt-1 text-gray-500 text-xs">
+            <div className="flex items-center space-x-2 mt-1">
+              <p className="text-gray-500 text-xs">
               Last updated: {lastUpdate.toLocaleTimeString()}
             </p>
+              {connectionStatus === 'connected' && (
+                <span className="inline-flex items-center bg-green-100 px-2 py-0.5 rounded-full font-medium text-green-800 text-xs">
+                  <div className="bg-green-400 mr-1 rounded-full w-1.5 h-1.5 animate-pulse"></div>
+                  Live Updates
+                </span>
+              )}
+            </div>
           )}
         </div>
         <div className="flex items-center space-x-3">
+          {/* Real-time connection status */}
+          <div className="flex items-center space-x-2">
+            {connectionStatus === 'connected' ? (
+              <div className="flex items-center space-x-1 text-green-600">
+                <Wifi className="w-4 h-4" />
+                <span className="font-medium text-sm">Live</span>
+              </div>
+            ) : connectionStatus === 'connecting' ? (
+              <div className="flex items-center space-x-1 text-yellow-600">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="font-medium text-sm">Connecting...</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-1 text-red-600">
+                <WifiOff className="w-4 h-4" />
+                <span className="font-medium text-sm">Offline</span>
+              </div>
+            )}
+          </div>
+          
           <Button 
             onClick={fetchVehicles} 
             size="sm" 
             variant="outline"
             className="flex items-center space-x-2"
+            disabled={connectionStatus === 'connected'}
           >
             <RefreshCw className="mr-2 w-4 h-4" />
-            Refresh
+            {connectionStatus === 'connected' ? 'Auto-updating' : 'Refresh'}
           </Button>
           <Button onClick={onBack} variant="outline">
             Back to Cost Centers
@@ -346,17 +454,37 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
               </p>
             </div>
           ) : (
-            filteredVehicles.map((vehicle) => (
-            <Card key={vehicle.id} className="bg-white hover:shadow-lg border border-gray-200 transition-shadow duration-200">
+            filteredVehicles.map((vehicle) => {
+              const hasValidCoordinates = vehicle.latitude && vehicle.longitude && 
+                parseFloat(vehicle.latitude) !== 0 && parseFloat(vehicle.longitude) !== 0;
+              
+              return (
+              <Card 
+                key={vehicle.id} 
+                className={`transition-all duration-500 border border-gray-200 ${
+                  hasValidCoordinates 
+                    ? 'bg-white hover:shadow-lg' 
+                    : 'bg-gray-100 opacity-75'
+                } ${
+                  updatedVehicleIds.has(vehicle.id) 
+                    ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg' 
+                    : ''
+                }`}
+              >
               <CardHeader className="pb-3 border-gray-100 border-b">
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="font-semibold text-gray-900 text-lg underline">
                       {vehicle.plate || 'N/A'}
                     </CardTitle>
-                    <div className="flex items-center mt-1">
+                    <div className="flex items-center space-x-2 mt-1">
                       <Shield className="mr-1 w-4 h-4 text-gray-400" />
                       <span className="text-gray-500 text-xs">Secure</span>
+                      {!hasValidCoordinates && (
+                        <span className="inline-flex items-center bg-red-100 px-2 py-0.5 rounded-full font-medium text-red-800 text-xs">
+                          No GPS
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -463,17 +591,39 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
                     </div>
                   </div>
                 )}
+                
+                {/* View Current Location Button */}
+                <div className="pt-4 border-gray-100 border-t">
+                  <Button
+                    onClick={() => {
+                      setSelectedVehicleForMap(vehicle);
+                      setIsMapOpen(true);
+                    }}
+                    size="sm"
+                    disabled={!hasValidCoordinates}
+                    className={`w-full text-white ${
+                      hasValidCoordinates 
+                        ? 'bg-blue-600 hover:bg-blue-700' 
+                        : 'bg-gray-400 cursor-not-allowed'
+                    }`}
+                    title={hasValidCoordinates ? 'View vehicle location on map' : 'No GPS coordinates available'}
+                  >
+                    <Map className="mr-2 w-4 h-4" />
+                    {hasValidCoordinates ? 'View Current Location' : 'No Location Data'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          ))
+            );
+          })
         )}
       </div>
 
-      {/* Active vs Stopped Vehicles Line Graph */}
+      {/* Vehicle Status Bar Chart */}
       <div className="bg-white p-6 border border-gray-200 rounded-lg">
         <div className="mb-6">
-          <h3 className="font-semibold text-gray-900 text-lg">Vehicle Activity Over Time</h3>
-          <p className="text-gray-600 text-sm">Active vs Stopped vehicles trend</p>
+          <h3 className="font-semibold text-gray-900 text-lg">Vehicle Status Overview</h3>
+          <p className="text-gray-600 text-sm">Current fleet status breakdown</p>
         </div>
         
         <div className="w-full h-80">
@@ -492,129 +642,115 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
             {/* X-axis line (bottom horizontal line) */}
             <line x1="50" y1="220" x2="750" y2="220" stroke="#d1d5db" strokeWidth="2" />
             
-            {/* X-axis time labels */}
+            {/* Y-axis labels */}
             {(() => {
-              const timeLabels = [
-                '6:00 AM', '8:00 AM', '10:00 AM', '12:00 PM', 
-                '2:00 PM', '4:00 PM', '6:00 PM', '8:00 PM'
-              ];
-              return timeLabels.map((time, index) => {
-                const x = (index / (timeLabels.length - 1)) * 700 + 50;
+              const maxValue = Math.max(activeVehicles, stoppedVehicles, totalVehicles);
+              const yLabels = [0, Math.ceil(maxValue * 0.25), Math.ceil(maxValue * 0.5), Math.ceil(maxValue * 0.75), maxValue];
+              return yLabels.map((value, index) => {
+                const y = 220 - (index / (yLabels.length - 1)) * 190;
                 return (
                   <text
                     key={index}
-                    x={x}
-                    y="250"
+                    x="40"
+                    y={y + 5}
                     className="font-medium text-gray-500 text-xs"
-                    textAnchor="middle"
+                    textAnchor="end"
                   >
-                    {time}
+                    {value}
                   </text>
                 );
               });
             })()}
             
-            {/* Generate sample data points for demonstration */}
+            {/* Bar Chart */}
             {(() => {
-              const dataPoints = 20;
-              const activeData = [];
-              const stoppedData = [];
-              const totalData = [];
+              const maxValue = Math.max(activeVehicles, stoppedVehicles, totalVehicles);
+              const barWidth = 120;
+              const barSpacing = 40;
+              const startX = 150;
               
-              for (let i = 0; i < dataPoints; i++) {
-                const x = (i / (dataPoints - 1)) * 700 + 50;
-                const activeY = 140 - (Math.random() * 60 + 20); // Random active vehicles between 20-80, positioned higher
-                const stoppedY = 140 - (Math.random() * 40 + 10); // Random stopped vehicles between 10-50, positioned higher
-                const totalY = 140 - (activeY + stoppedY - 140); // Total is sum, positioned higher
-                
-                activeData.push({ x, y: activeY });
-                stoppedData.push({ x, y: stoppedY });
-                totalData.push({ x, y: totalY });
-              }
+              // Active Vehicles Bar
+              const activeHeight = (activeVehicles / maxValue) * 180;
+              const activeY = 220 - activeHeight;
+              
+              // Stopped Vehicles Bar
+              const stoppedHeight = (stoppedVehicles / maxValue) * 180;
+              const stoppedY = 220 - stoppedHeight;
+              
+              // Total Vehicles Bar
+              const totalHeight = (totalVehicles / maxValue) * 180;
+              const totalY = 220 - totalHeight;
               
               return (
                 <>
-                  {/* Active vehicles line */}
-                  <polyline
-                    points={activeData.map(d => `${d.x},${d.y}`).join(' ')}
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  {/* Active Vehicles Bar */}
+                  <rect
+                    x={startX}
+                    y={activeY}
+                    width={barWidth}
+                    height={activeHeight}
+                    fill="#10b981"
+                    rx="4"
+                    className="hover:opacity-80 transition-all duration-300"
                   />
+                  <text
+                    x={startX + barWidth / 2}
+                    y={activeY - 10}
+                    className="font-semibold text-gray-700 text-sm"
+                    textAnchor="middle"
+                  >
+                    {activeVehicles}
+                  </text>
                   
-                  {/* Stopped vehicles line */}
-                  <polyline
-                    points={stoppedData.map(d => `${d.x},${d.y}`).join(' ')}
-                    fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  {/* Stopped Vehicles Bar */}
+                  <rect
+                    x={startX + barWidth + barSpacing}
+                    y={stoppedY}
+                    width={barWidth}
+                    height={stoppedHeight}
+                    fill="#f59e0b"
+                    rx="4"
+                    className="hover:opacity-80 transition-all duration-300"
                   />
+                  <text
+                    x={startX + barWidth + barSpacing + barWidth / 2}
+                    y={stoppedY - 10}
+                    className="font-semibold text-gray-700 text-sm"
+                    textAnchor="middle"
+                  >
+                    {stoppedVehicles}
+                  </text>
                   
-                  {/* Total vehicles line */}
-                  <polyline
-                    points={totalData.map(d => `${d.x},${d.y}`).join(' ')}
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeDasharray="5,5"
+                  {/* Total Vehicles Bar */}
+                  <rect
+                    x={startX + (barWidth + barSpacing) * 2}
+                    y={totalY}
+                    width={barWidth}
+                    height={totalHeight}
+                    fill="#3b82f6"
+                    rx="4"
+                    className="hover:opacity-80 transition-all duration-300"
                   />
-                  
-                  {/* Data points for active vehicles */}
-                  {activeData.map((point, index) => (
-                    <circle
-                      key={`active-${index}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r="3"
-                      fill="#10b981"
-                      className="transition-all duration-200 hover:r-4"
-                    />
-                  ))}
-                  
-                  {/* Data points for stopped vehicles */}
-                  {stoppedData.map((point, index) => (
-                    <circle
-                      key={`stopped-${index}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r="3"
-                      fill="#f59e0b"
-                      className="transition-all duration-200 hover:r-4"
-                    />
-                  ))}
-                  
-                  {/* Data points for total vehicles */}
-                  {totalData.map((point, index) => (
-                    <circle
-                      key={`total-${index}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r="2"
-                      fill="#3b82f6"
-                      className="transition-all duration-200 hover:r-3"
-                    />
-                  ))}
+                  <text
+                    x={startX + (barWidth + barSpacing) * 2 + barWidth / 2}
+                    y={totalY - 10}
+                    className="font-semibold text-gray-700 text-sm"
+                    textAnchor="middle"
+                  >
+                    {totalVehicles}
+                  </text>
                 </>
               );
             })()}
             
-            {/* Legend with better spacing */}
-            <g transform="translate(50, 200)">
-              <rect x="0" y="0" width="12" height="12" fill="#10b981" rx="2" />
-              <text x="20" y="10" className="font-medium text-gray-700 text-xs">Active Vehicles</text>
-              
-              <rect x="120" y="0" width="12" height="12" fill="#f59e0b" rx="2" />
-              <text x="140" y="10" className="font-medium text-gray-700 text-xs">Stopped Vehicles</text>
-              
-              <rect x="240" y="0" width="12" height="12" fill="#3b82f6" rx="2" />
-              <text x="260" y="10" className="font-medium text-gray-700 text-xs">Total Vehicles</text>
+            {/* X-axis labels */}
+            <g transform="translate(0, 240)">
+              <text x="210" y="10" className="font-medium text-gray-700 text-sm" textAnchor="middle">Active Vehicles</text>
+              <text x="370" y="10" className="font-medium text-gray-700 text-sm" textAnchor="middle">Stopped Vehicles</text>
+              <text x="530" y="10" className="font-medium text-gray-700 text-sm" textAnchor="middle">Total Vehicles</text>
             </g>
+            
+
           </svg>
         </div>
         
@@ -634,6 +770,16 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
           </div>
         </div>
       </div>
+      
+      {/* Vehicle Location Map Dialog */}
+      <VehicleLocationMap
+        vehicle={selectedVehicleForMap}
+        isOpen={isMapOpen}
+        onClose={() => {
+          setIsMapOpen(false);
+          setSelectedVehicleForMap(null);
+        }}
+      />
     </div>
   );
 }

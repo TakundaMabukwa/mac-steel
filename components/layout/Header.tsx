@@ -1,53 +1,107 @@
 'use client';
 
-import { Bell, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Bell, User, Menu } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
-export function Header() {
+interface HeaderProps {
+  isSidebarCollapsed: boolean;
+  onToggleSidebar?: () => void;
+}
+
+export function Header({ isSidebarCollapsed, onToggleSidebar }: HeaderProps) {
+  const router = useRouter();
+  const [user, setUser] = useState<{ email?: string; name?: string } | null>(null);
+  const [greeting, setGreeting] = useState('');
+
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser({
+          email: user.email,
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+        });
+      }
+    };
+
+    getUser();
+
+    // Set greeting based on time of day
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting('Good morning');
+    } else if (hour < 17) {
+      setGreeting('Good afternoon');
+    } else {
+      setGreeting('Good evening');
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/auth/login');
+  };
+
   return (
-    <header className="h-16 bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-between px-6 shadow-lg">
-      <div className="flex items-center space-x-4">
-        <div className="text-xl font-bold">Soltrack</div>
-      </div>
-      
-      <div className="flex items-center space-x-4">
-        <span className="text-sm">Good afternoon, Admin Macsteel</span>
-        
-        <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
-          <Bell className="h-5 w-5" />
-          <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs">
-            1
-          </div>
-        </Button>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-blue-700 text-white">AM</AvatarFallback>
-              </Avatar>
+    <header className={`fixed top-0 right-0 h-16 bg-gradient-to-r from-blue-800 to-blue-900 shadow-lg z-40 transition-all duration-300 ease-in-out ${
+      isSidebarCollapsed ? 'left-16' : 'left-64'
+    }`}>
+      <div className="flex justify-between items-center px-6 h-full">
+        {/* Left side - Sidebar toggle and Logo */}
+        <div className="flex items-center space-x-4">
+          {onToggleSidebar && (
+            <Button
+              onClick={onToggleSidebar}
+              variant="ghost"
+              size="sm"
+              className="hover:bg-blue-700 p-2 w-9 h-9 text-white"
+            >
+              <Menu className="w-5 h-5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end">
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <span>Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <span>Sign out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+        </div>
+
+        {/* Right side - User info and actions */}
+        <div className="flex items-center space-x-4">
+          {/* Greeting and user name */}
+          <div className="text-white text-sm">
+            <span className="opacity-90">{greeting}, </span>
+            <span className="font-medium">{user?.name || 'Admin'}</span>
+          </div>
+
+          {/* Notifications */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:bg-blue-700 p-2 w-9 h-9 text-white"
+          >
+            <Bell className="w-5 h-5" />
+          </Button>
+
+          {/* User avatar */}
+          <Avatar className="w-8 h-8">
+            <AvatarImage src="" alt={user?.name || 'User'} />
+            <AvatarFallback className="bg-blue-700 font-medium text-white text-sm">
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+
+          {/* User menu dropdown */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="hover:bg-blue-700 p-2 w-9 h-9 text-white"
+          >
+            <User className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
     </header>
   );

@@ -6,17 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
-interface DatePickerProps {
-  value?: { year: number; month: number }
-  onChange?: (value: { year: number; month: number }) => void
+interface DatePickerWithDayProps {
+  value?: { year: number; month: number; day: number }
+  onChange?: (value: { year: number; month: number; day: number }) => void
   placeholder?: string
   className?: string
 }
 
-export function DatePicker({ value, onChange, placeholder, className }: DatePickerProps) {
+export function DatePickerWithDay({ value, onChange, placeholder, className }: DatePickerWithDayProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [currentYear, setCurrentYear] = React.useState(value?.year || new Date().getFullYear())
-  const [viewMode, setViewMode] = React.useState<'year' | 'month'>('year')
+  const [currentMonth, setCurrentMonth] = React.useState(value?.month || new Date().getMonth() + 1)
+  const [viewMode, setViewMode] = React.useState<'year' | 'month' | 'day'>('year')
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -33,7 +34,12 @@ export function DatePicker({ value, onChange, placeholder, className }: DatePick
   }
 
   const handleMonthSelect = (month: number) => {
-    const newValue = { year: currentYear, month }
+    setCurrentMonth(month)
+    setViewMode('day')
+  }
+
+  const handleDaySelect = (day: number) => {
+    const newValue = { year: currentYear, month: currentMonth, day }
     onChange?.(newValue)
     setIsOpen(false)
     setViewMode('year') // Reset to year view for next time
@@ -43,7 +49,11 @@ export function DatePicker({ value, onChange, placeholder, className }: DatePick
     setViewMode('year')
   }
 
-  const displayValue = value ? `${months[value.month - 1]} ${value.year}` : placeholder
+  const handleBackToMonthView = () => {
+    setViewMode('month')
+  }
+
+  const displayValue = value ? `${months[value.month - 1]} ${value.day}, ${value.year}` : placeholder
 
   // Generate years for the grid (24 years: 12 before current, 12 after)
   const currentYearValue = new Date().getFullYear()
@@ -51,6 +61,14 @@ export function DatePicker({ value, onChange, placeholder, className }: DatePick
   
   // Check if year should be disabled (2024 and earlier)
   const isYearDisabled = (year: number) => year <= 2024
+
+  // Generate days for the selected month
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month, 0).getDate()
+  }
+
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth)
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -122,7 +140,7 @@ export function DatePicker({ value, onChange, placeholder, className }: DatePick
                 })}
               </div>
             </>
-          ) : (
+          ) : viewMode === 'month' ? (
             <>
               {/* Month Selection Header */}
               <div className="flex justify-between items-center mb-3">
@@ -154,6 +172,42 @@ export function DatePicker({ value, onChange, placeholder, className }: DatePick
                     )}
                   >
                     {month.slice(0, 3)}
+                  </Button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Day Selection Header */}
+              <div className="flex justify-between items-center mb-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBackToMonthView}
+                  className="p-0 w-8 h-8"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="font-medium text-sm">{months[currentMonth - 1]} {currentYear}</span>
+                <div className="w-8"></div> {/* Spacer for alignment */}
+              </div>
+              
+              {/* Day Grid */}
+              <div className="gap-1 grid grid-cols-7">
+                {days.map((day) => (
+                  <Button
+                    key={day}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDaySelect(day)}
+                    className={cn(
+                      "h-8 text-xs",
+                      value?.year === currentYear && value?.month === currentMonth && value?.day === day
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "hover:bg-gray-100"
+                    )}
+                  >
+                    {day}
                   </Button>
                 ))}
               </div>

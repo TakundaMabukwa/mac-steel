@@ -3,18 +3,12 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export function SignUpForm({
   className,
@@ -25,6 +19,8 @@ export function SignUpForm({
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
   const router = useRouter();
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -57,64 +53,130 @@ export function SignUpForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+    <div className={cn("flex justify-center items-center bg-gradient-to-br from-blue-800 via-blue-600 via-white to-white p-8 min-h-screen", className)} {...props}>
+      <div className="bg-white shadow-2xl rounded-xl w-4/5 h-4/5 overflow-hidden">
+        <div className="flex h-full">
+          {/* Left Side - Sign Up Form */}
+          <div className="flex flex-1 justify-center items-center bg-white p-8">
+            <div className="space-y-8 w-full max-w-md">
+              {/* Logo */}
+              <div className="text-center">
+                <div className="flex justify-center items-center mx-auto mb-4">
+                  <img 
+                    src="https://macsteel.co.za/assets/images/logo-macsteel-dark.svg" 
+                    alt="MacSteel Logo" 
+                    className="w-auto h-16"
+                  />
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <h1 className="font-bold text-gray-900 text-3xl">Create Account</h1>
+                <p className="mt-2 text-gray-600">Join MacSteel and start managing your fleet today</p>
               </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
+              <form onSubmit={handleSignUp} className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="email" className="font-medium text-gray-700 text-sm">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter Your Email Address"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="password" className="font-medium text-gray-700 text-sm">
+                      Password
+                    </Label>
+                    <div className="relative mt-1">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Create a Password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="right-0 absolute inset-y-0 flex items-center pr-3"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5 text-gray-400" />
+                        ) : (
+                          <Eye className="w-5 h-5 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="repeat-password" className="font-medium text-gray-700 text-sm">
+                      Repeat Password
+                    </Label>
+                    <div className="relative mt-1">
+                      <Input
+                        id="repeat-password"
+                        type={showRepeatPassword ? "text" : "password"}
+                        placeholder="Confirm Your Password"
+                        required
+                        value={repeatPassword}
+                        onChange={(e) => setRepeatPassword(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRepeatPassword(!showRepeatPassword)}
+                        className="right-0 absolute inset-y-0 flex items-center pr-3"
+                      >
+                        {showRepeatPassword ? (
+                          <EyeOff className="w-5 h-5 text-gray-400" />
+                        ) : (
+                          <Eye className="w-5 h-5 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                />
+
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                <Button type="submit" className="bg-gray-900 hover:bg-gray-800 w-full" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Create Account"}
+                </Button>
+              </form>
+
+              <div className="text-center">
+                <p className="text-gray-600 text-sm">
+                  Already Have an Account?{" "}
+                  <Link href="/auth/login" className="font-medium text-blue-800 hover:underline">
+                    Sign In
+                  </Link>
+                </p>
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating an account..." : "Sign up"}
-              </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
-                Login
-              </Link>
+          </div>
+          {/* Right Side - MacSteel Trading Image */}
+          <div className="hidden relative lg:flex flex-1">
+            <img
+              src="https://macsteel.co.za/assets/images/home-macsteel-trading.jpg"
+              alt="MacSteel Trading"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+            <div className="bottom-8 left-8 absolute text-white">
+              <h2 className="mb-2 font-bold text-2xl">MacSteel Trading</h2>
+              <p className="opacity-90 text-lg">Your trusted partner in steel trading and logistics</p>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

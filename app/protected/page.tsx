@@ -1,22 +1,47 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
 import { TabNavigation } from '@/components/dashboard/TabNavigation';
 import { StartTimeDashboard } from '@/components/dashboard/StartTimeDashboard';
+import { StartTimeReportsDashboard } from '@/components/dashboard/StartTimeReportsDashboard';
 import { StartTimeDashboardWithLookup } from '@/components/dashboard/StartTimeDashboardWithLookup';
+import { VehiclesDashboard } from '@/components/dashboard/VehiclesDashboard';
 import { UtilisationDashboard } from '@/components/dashboard/UtilisationDashboard';
 import { ReportingDashboard } from '@/components/dashboard/ReportingDashboard';
 import { CostCenterProvider } from '@/lib/context/CostCenterContext';
+import { StartTimeReportsProvider } from '@/lib/context/StartTimeReportsContext';
 
 export default function ProtectedPage() {
   const [activeTab, setActiveTab] = useState('start-time');
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Sync active tab with URL query parameter
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && ['start-time', 'start-time-dashboard', 'utilisation', 'utilisation-admin', 'reporting', 'drivers', 'vehicles'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    // Update URL without triggering a page reload
+    const newUrl = `/protected?tab=${tabId}`;
+    router.replace(newUrl, { scroll: false });
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -45,12 +70,19 @@ export default function ProtectedPage() {
       case 'start-time':
         return <StartTimeDashboard />;
       case 'start-time-dashboard':
-        return <StartTimeDashboardWithLookup />;
+        return (
+          <StartTimeReportsProvider>
+            <StartTimeReportsDashboard />
+          </StartTimeReportsProvider>
+        );
       case 'utilisation':
       case 'utilisation-admin':
         return <UtilisationDashboard />;
       case 'reporting':
         return <ReportingDashboard />;
+
+      case 'vehicles':
+        return <VehiclesDashboard />;
       case 'drivers':
         return (
           <div className="p-8 text-gray-500 text-center">
@@ -80,17 +112,25 @@ export default function ProtectedPage() {
 
   return (
     <CostCenterProvider>
-      <div className="">
+      <div className="bg-blue-100 min-h-screen">
         <div className="flex flex-1 overflow-hidden">
-          <Sidebar />
+          <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
+          
+          <div className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${
+            isSidebarCollapsed ? 'ml-16' : 'ml-64'
+          }`}>
+            {/* New Header */}
+            <Header isSidebarCollapsed={isSidebarCollapsed} onToggleSidebar={toggleSidebar} />
+            
+            {/* Main Content Area */}
+            <main className="flex flex-col flex-1 bg-white mt-16 overflow-hidden">
+              <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
 
-          <main className="flex flex-col flex-1 overflow-hidden">
-            <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-
-            <div className="flex-1 p-6 overflow-auto">
-              {renderTabContent()}
-            </div>
-          </main>
+              <div className="flex-1 bg-blue-100/50 p-6 overflow-auto">
+                {renderTabContent()}
+              </div>
+            </main>
+          </div>
         </div>
       </div>
     </CostCenterProvider>

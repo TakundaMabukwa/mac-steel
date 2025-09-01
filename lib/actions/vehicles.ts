@@ -101,14 +101,14 @@ export async function getLiveVehiclesByAccountNumber(accountNumber: string): Pro
   }
 }
 
-export async function updateVehicleReason(plate: string, reason: string): Promise<void> {
+export async function updateVehicleReason(vehicleId: number, reason: string): Promise<void> {
   try {
     const supabase = await createClient();
     
     const { error } = await supabase
       .from('late_vehicles')
       .update({ reason: reason })
-      .eq('plate', plate);
+      .eq('id', vehicleId);
 
     if (error) {
       console.error('Error updating vehicle reason:', error);
@@ -158,33 +158,19 @@ export async function getAllVehiclesWithStartTime(accountNumber: string): Promis
   try {
     const supabase = await createClient();
     
-    // First try to get vehicles from late_vehicles_reports table which has more comprehensive data
-    const { data: reportsData, error: reportsError } = await supabase
-      .from('late_vehicles_reports')
+    // Fetch vehicles from late_vehicles table based on new_account_number
+    const { data, error } = await supabase
+      .from('late_vehicles')
       .select('*')
       .eq('new_account_number', accountNumber)
-      .not('start_time', 'is', null)
       .order('start_time', { ascending: false });
 
-    if (reportsError) {
-      console.error('Error fetching from late_vehicles_reports:', reportsError);
-      // Fallback to late_vehicles table
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('late_vehicles')
-        .select('*')
-        .eq('new_account_number', accountNumber)
-        .not('start_time', 'is', null)
-        .order('start_time', { ascending: false });
-
-      if (fallbackError) {
-        console.error('Error fetching from late_vehicles:', fallbackError);
-        throw new Error('Failed to fetch vehicles');
-      }
-
-      return fallbackData || [];
+    if (error) {
+      console.error('Error fetching from late_vehicles:', error);
+      throw new Error('Failed to fetch vehicles');
     }
 
-    return reportsData || [];
+    return data || [];
   } catch (error) {
     console.error('Error in getAllVehiclesWithStartTime:', error);
     throw new Error('Failed to fetch vehicles with start times');

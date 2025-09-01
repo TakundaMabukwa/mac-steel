@@ -8,6 +8,8 @@ interface CostCenterContextType {
   costCenters: MacSteelCostCenter[];
   isLoading: boolean;
   error: string | null;
+  selectedCostCenter: MacSteelCostCenter | null;
+  setSelectedCostCenter: (costCenter: MacSteelCostCenter | null) => void;
   refreshCostCenters: () => Promise<void>;
   getVehiclesForCostCenter: (accountNumber: string) => Promise<Vehicle[]>;
   isVehicleLoading: Record<string, boolean>;
@@ -19,6 +21,7 @@ export function CostCenterProvider({ children }: { children: ReactNode }) {
   const [costCenters, setCostCenters] = useState<MacSteelCostCenter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCostCenter, setSelectedCostCenter] = useState<MacSteelCostCenter | null>(null);
   const [isVehicleLoading, setIsVehicleLoading] = useState<Record<string, boolean>>({});
 
   const fetchCostCenters = async () => {
@@ -60,6 +63,8 @@ export function CostCenterProvider({ children }: { children: ReactNode }) {
     costCenters,
     isLoading,
     error,
+    selectedCostCenter,
+    setSelectedCostCenter,
     refreshCostCenters,
     getVehiclesForCostCenter,
     isVehicleLoading,
