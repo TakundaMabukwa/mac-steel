@@ -65,7 +65,7 @@ fi
 
 # Install dependencies
 print_status "Installing dependencies..."
-npm ci --production
+npm ci
 
 # Build the application
 print_status "Building the application..."
