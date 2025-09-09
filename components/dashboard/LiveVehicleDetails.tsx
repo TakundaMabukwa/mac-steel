@@ -5,10 +5,9 @@ import { MapPin, Gauge, Shield, Key, Thermometer, Clock, RefreshCw, Car, Navigat
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getLiveVehiclesByAccountNumber, LiveVehicle } from '@/lib/actions/vehicles';
 import { MacSteelCostCenter } from '@/lib/actions/costCenters';
-
-import { createClient } from '@/lib/supabase/client';
+import { useLiveVehicles, LiveVehicleData } from '@/lib/context/LiveVehicleContext';
+import { LiveVehicleCard } from '@/components/shared/LiveVehicleCard';
 
 interface LiveVehicleDetailsProps {
   costCenter: MacSteelCostCenter;
@@ -16,130 +15,40 @@ interface LiveVehicleDetailsProps {
 }
 
 export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsProps) {
-  const [vehicles, setVehicles] = useState<LiveVehicle[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const { 
+    vehicles: allVehicles, 
+    isLoading, 
+    error, 
+    isConnected, 
+    lastUpdate, 
+    refreshVehicles, 
+    getVehiclesByCostCenter 
+  } = useLiveVehicles();
+  
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'stopped'>('all');
   const [isFiltering, setIsFiltering] = useState(false);
-
-
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [updatedVehicleIds, setUpdatedVehicleIds] = useState<Set<number>>(new Set());
   const hasInitialized = useRef(false);
-  const supabase = createClient();
 
-  // Set up real-time subscription and initial data fetch
+  // Get vehicles for this specific cost center
+  const vehicles = getVehiclesByCostCenter(costCenter.new_account_number);
+
+  // Set up visual update indicators for vehicles
   useEffect(() => {
     if (hasInitialized.current) return;
-    
     hasInitialized.current = true;
     
-    const setupRealTimeData = async () => {
-      if (!costCenter.new_account_number) return;
-      
-      setIsLoading(true);
-      setError(null);
-      setConnectionStatus('connecting');
-      
-      try {
-        // Initial data fetch
-        const vehicleData = await getLiveVehiclesByAccountNumber(costCenter.new_account_number);
-        setVehicles(vehicleData);
-        setLastUpdate(new Date());
-        
-        // Set up real-time subscription
-        const channel = supabase
-          .channel('live_vehicle_data_changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'live_vehicle_data',
-              filter: `new_account_number=eq.${costCenter.new_account_number}`
-            },
-            (payload) => {
-              console.log('Real-time update received:', payload);
-              
-              if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-                const newVehicle = payload.new as LiveVehicle;
-                setVehicles(prevVehicles => {
-                  // Remove existing vehicle with same ID and add updated one
-                  const filtered = prevVehicles.filter(v => v.id !== newVehicle.id);
-                  return [...filtered, newVehicle].sort((a, b) => 
-                    new Date(b.loctime || '').getTime() - new Date(a.loctime || '').getTime()
-                  );
-                });
-                
-                // Add visual update indicator
-                setUpdatedVehicleIds(prev => new Set([...prev, newVehicle.id]));
-                setTimeout(() => {
-                  setUpdatedVehicleIds(prev => {
-                    const newSet = new Set(prev);
-                    newSet.delete(newVehicle.id);
-                    return newSet;
-                  });
-                }, 2000); // Remove highlight after 2 seconds
-                
-                setLastUpdate(new Date());
-              } else if (payload.eventType === 'DELETE') {
-                const deletedVehicle = payload.old as LiveVehicle;
-                setVehicles(prevVehicles => 
-                  prevVehicles.filter(v => v.id !== deletedVehicle.id)
-                );
-                setLastUpdate(new Date());
-              }
-            }
-          )
-          .subscribe((status) => {
-            console.log('Subscription status:', status);
-            if (status === 'SUBSCRIBED') {
-              setConnectionStatus('connected');
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              setConnectionStatus('disconnected');
-            }
-          });
-        
-        // Store channel reference for cleanup
-        return () => {
-          supabase.removeChannel(channel);
-        };
-        
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch live vehicles');
-        setConnectionStatus('disconnected');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const cleanup = setupRealTimeData();
+    // Add visual update indicator for vehicles when they change
+    const interval = setInterval(() => {
+      // This will trigger re-renders when vehicles are updated via WebSocket
+      // The context handles the actual data updates
+    }, 1000);
     
-    // Cleanup function
-    return () => {
-      if (cleanup) {
-        cleanup.then(cleanupFn => cleanupFn && cleanupFn());
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - will only run once
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchVehicles = async () => {
-    if (!costCenter.new_account_number) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const vehicleData = await getLiveVehiclesByAccountNumber(costCenter.new_account_number);
-      setVehicles(vehicleData);
-      setLastUpdate(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch live vehicles');
-    } finally {
-      setIsLoading(false);
-    }
+    await refreshVehicles();
   };
 
   // Calculate stats from vehicle data
@@ -274,7 +183,7 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
               <p className="text-gray-500 text-xs">
               Last updated: {lastUpdate.toLocaleTimeString()}
             </p>
-              {connectionStatus === 'connected' && (
+              {isConnected && (
                 <span className="inline-flex items-center bg-green-100 px-2 py-0.5 rounded-full font-medium text-green-800 text-xs">
                   <div className="bg-green-400 mr-1 rounded-full w-1.5 h-1.5 animate-pulse"></div>
                   Live Updates
@@ -286,12 +195,12 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
         <div className="flex items-center space-x-3">
           {/* Real-time connection status */}
           <div className="flex items-center space-x-2">
-            {connectionStatus === 'connected' ? (
+            {isConnected ? (
               <div className="flex items-center space-x-1 text-green-600">
                 <Wifi className="w-4 h-4" />
                 <span className="font-medium text-sm">Live</span>
               </div>
-            ) : connectionStatus === 'connecting' ? (
+            ) : isLoading ? (
               <div className="flex items-center space-x-1 text-yellow-600">
                 <RefreshCw className="w-4 h-4 animate-spin" />
                 <span className="font-medium text-sm">Connecting...</span>
@@ -309,10 +218,10 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
             size="sm" 
             variant="outline"
             className="flex items-center space-x-2"
-            disabled={connectionStatus === 'connected'}
+            disabled={isConnected}
           >
             <RefreshCw className="mr-2 w-4 h-4" />
-            {connectionStatus === 'connected' ? 'Auto-updating' : 'Refresh'}
+            {isConnected ? 'Auto-updating' : 'Refresh'}
           </Button>
           <Button onClick={onBack} variant="outline">
             Back to Cost Centers
@@ -451,138 +360,13 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
               </p>
             </div>
           ) : (
-            filteredVehicles.map((vehicle) => {
-              
-              return (
-              <Card 
+            filteredVehicles.map((vehicle) => (
+              <LiveVehicleCard
                 key={vehicle.id} 
-                className={`transition-all duration-500 border border-gray-200 bg-white hover:shadow-lg ${
-                  updatedVehicleIds.has(vehicle.id) 
-                    ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg' 
-                    : ''
-                }`}
-              >
-              <CardHeader className="pb-3 border-gray-100 border-b">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="font-semibold text-gray-900 text-lg underline">
-                      {vehicle.plate || 'N/A'}
-                    </CardTitle>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Shield className="mr-1 w-4 h-4 text-gray-400" />
-                      <span className="text-gray-500 text-xs">Secure</span>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-4">
-                <div className="flex items-center space-x-3">
-                  <div className="flex justify-center items-center bg-blue-100 rounded-full w-8 h-8">
-                    <Car className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">Driver</p>
-                    <p className="text-gray-600 text-sm">{vehicle.drivername || vehicle.plate || 'N/A'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="flex justify-center items-center bg-green-100 rounded-full w-8 h-8">
-                    <MapPin className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">Geo Zone</p>
-                    <p className="text-gray-600 text-sm">{vehicle.geozone || 'N/A'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="flex justify-center items-center bg-purple-100 rounded-full w-8 h-8">
-                    <Gauge className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">CPK</p>
-                    <p className="text-gray-600 text-sm">0 Km/l</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="flex justify-center items-center bg-orange-100 rounded-full w-8 h-8">
-                    <Navigation className="w-4 h-4 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">Odo</p>
-                    <p className="text-gray-600 text-sm">{vehicle.mileage || 'N/A'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="flex justify-center items-center bg-red-100 rounded-full w-8 h-8">
-                    <Shield className="w-4 h-4 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">Safety Info</p>
-                    <p className="text-gray-600 text-sm">
-                      {vehicle.speed && parseFloat(vehicle.speed) > 0 ? 'Vehicle Moving' : 'Vehicle Stopped'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="flex justify-center items-center bg-yellow-100 rounded-full w-8 h-8">
-                    <Key className="w-4 h-4 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">Engine</p>
-                    <p className="text-gray-600 text-sm">
-                      {vehicle.speed && parseFloat(vehicle.speed) > 0 ? 'On' : 'Off'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="flex justify-center items-center bg-indigo-100 rounded-full w-8 h-8">
-                                         <Zap className="w-4 h-4 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">Speed</p>
-                    <p className="text-gray-600 text-sm">
-                      {vehicle.speed ? `${vehicle.speed} km/h` : '0 km/h'}
-                    </p>
-                  </div>
-                </div>
-                
-                {vehicle.temperature && (
-                  <div className="flex items-center space-x-3">
-                    <div className="flex justify-center items-center bg-pink-100 rounded-full w-8 h-8">
-                      <Thermometer className="w-4 h-4 text-pink-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">Temperature</p>
-                      <p className="text-gray-600 text-sm">{vehicle.temperature}°C</p>
-                    </div>
-                  </div>
-                )}
-                
-                {vehicle.loctime && (
-                  <div className="flex items-center space-x-3">
-                    <div className="flex justify-center items-center bg-gray-100 rounded-full w-8 h-8">
-                      <Clock className="w-4 h-4 text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">Last Update</p>
-                      <p className="text-gray-600 text-sm">
-                        {new Date(vehicle.loctime).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-
-              </CardContent>
-            </Card>
-            );
-          })
+                vehicle={vehicle}
+                showHighlight={updatedVehicleIds.has(vehicle.id)}
+              />
+            ))
         )}
       </div>
 

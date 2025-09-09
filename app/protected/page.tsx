@@ -12,8 +12,10 @@ import { StartTimeDashboardWithLookup } from '@/components/dashboard/StartTimeDa
 import { VehiclesDashboard } from '@/components/dashboard/VehiclesDashboard';
 import { UtilisationDashboard } from '@/components/dashboard/UtilisationDashboard';
 import { ReportingDashboard } from '@/components/dashboard/ReportingDashboard';
+import { LiveVehicleDashboard } from '@/components/dashboard/LiveVehicleDashboard';
 import { CostCenterProvider } from '@/lib/context/CostCenterContext';
 import { StartTimeReportsProvider } from '@/lib/context/StartTimeReportsContext';
+import { LiveVehicleProvider } from '@/lib/context/LiveVehicleContext';
 
 function ProtectedPageContent() {
   const [activeTab, setActiveTab] = useState('start-time');
@@ -111,29 +113,31 @@ function ProtectedPageContent() {
   }
 
   return (
-    <CostCenterProvider>
-      <div className="bg-blue-100 min-h-screen">
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-          
-          <div className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${
-            isSidebarCollapsed ? 'ml-16' : 'ml-64'
-          }`}>
-            {/* New Header */}
-            <Header isSidebarCollapsed={isSidebarCollapsed} onToggleSidebar={toggleSidebar} />
+    <LiveVehicleProvider>
+      <CostCenterProvider>
+        <div className="bg-blue-100 min-h-screen">
+          <div className="flex flex-1 overflow-hidden">
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
             
-            {/* Main Content Area */}
-            <main className="flex flex-col flex-1 bg-white mt-16 overflow-hidden">
-              <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+            <div className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${
+              isSidebarCollapsed ? 'ml-16' : 'ml-64'
+            }`}>
+              {/* New Header */}
+              <Header isSidebarCollapsed={isSidebarCollapsed} onToggleSidebar={toggleSidebar} />
+              
+              {/* Main Content Area */}
+              <main className="flex flex-col flex-1 bg-white mt-16 overflow-hidden">
+                <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
 
-              <div className="flex-1 bg-blue-100/50 p-6 overflow-auto">
-                {renderTabContent()}
-              </div>
-            </main>
+                <div className="flex-1 bg-blue-100/50 p-6 overflow-auto">
+                  {renderTabContent()}
+                </div>
+              </main>
+            </div>
           </div>
         </div>
-      </div>
-    </CostCenterProvider>
+      </CostCenterProvider>
+    </LiveVehicleProvider>
   );
 }
 

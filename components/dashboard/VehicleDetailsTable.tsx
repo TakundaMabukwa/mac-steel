@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabase/client';
 interface VehicleDetailsTableProps {
   costCenter: MacSteelCostCenter;
   onBack: () => void;
+  showLateVehiclesOnly?: boolean;
 }
 
 const REASON_OPTIONS = [
@@ -36,7 +37,7 @@ const REASON_OPTIONS = [
   'Other'
 ];
 
-export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableProps) {
+export function VehicleDetailsTable({ costCenter, onBack, showLateVehiclesOnly = false }: VehicleDetailsTableProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -187,7 +188,9 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
     return startTime > exitTime;
   };
 
-  const filteredVehicles = vehicles; // Show all vehicles by default
+  const filteredVehicles = showLateVehiclesOnly 
+    ? vehicles.filter(vehicle => isVehicleLate(vehicle) || vehicle.status === 'late' || vehicle.status === 'not_on_time')
+    : vehicles; // Show all vehicles by default
 
   if (isLoading) {
     return (
@@ -268,16 +271,24 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
       </div>
       
       {/* Check if there are vehicles */}
-      {vehicles.length === 0 ? (
+      {filteredVehicles.length === 0 ? (
         <div className="py-12 text-center">
           <div className="bg-gray-50 p-8 border border-gray-200 rounded-lg">
             <Car className="mx-auto mb-4 w-12 h-12 text-gray-400" />
-            <h3 className="mb-2 font-medium text-gray-900 text-lg">No Vehicles Found</h3>
+            <h3 className="mb-2 font-medium text-gray-900 text-lg">
+              {showLateVehiclesOnly ? 'No Late Vehicles Found' : 'No Vehicles Found'}
+            </h3>
             <p className="mb-4 text-gray-600">
-              There are no vehicles available for cost center: <span className="font-medium">{costCenter.new_account_number}</span>
+              {showLateVehiclesOnly 
+                ? `There are no late vehicles for cost center: ${costCenter.new_account_number}`
+                : `There are no vehicles available for cost center: ${costCenter.new_account_number}`
+              }
             </p>
             <p className="text-gray-500 text-sm">
-              Data will update automatically when vehicles are added.
+              {showLateVehiclesOnly 
+                ? 'All vehicles are on time or data will update automatically when late vehicles are detected.'
+                : 'Data will update automatically when vehicles are added.'
+              }
             </p>
       </div>
         </div>
@@ -366,7 +377,7 @@ export function VehicleDetailsTable({ costCenter, onBack }: VehicleDetailsTableP
               )
             }
           ]}
-          title="Vehicle Details"
+          title={showLateVehiclesOnly ? "Late Vehicles" : "Vehicle Details"}
           searchPlaceholder="Search vehicles..."
           showDownload={true}
           showColumns={true}

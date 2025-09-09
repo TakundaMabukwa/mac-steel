@@ -40,7 +40,6 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
       icon: FileText,
       color: 'text-blue-600'
     },
-
     // {
     //   id: 'drivers',
     //   label: 'Drivers',

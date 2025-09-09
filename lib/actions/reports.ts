@@ -39,7 +39,7 @@ export async function getLatestDailyReport(accountNumber: string): Promise<Repor
   try {
     const supabase = await createClient();
     
-    // Get the most recent daily report for the previous day
+    // Get the most recent daily report for yesterday
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayString = yesterday.toISOString().split('T')[0];
@@ -49,8 +49,8 @@ export async function getLatestDailyReport(accountNumber: string): Promise<Repor
       .select('*')
       .eq('new_account_number', accountNumber)
       .eq('daily', true)
-      .gte('month', yesterdayString)
-      .lte('month', yesterdayString)
+      .gte('created_at', yesterdayString + 'T00:00:00')
+      .lte('created_at', yesterdayString + 'T23:59:59')
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -70,11 +70,27 @@ export async function getLatestWeeklyReport(accountNumber: string): Promise<Repo
   try {
     const supabase = await createClient();
     
+    // Get the current week's report (Monday to Sunday)
+    const now = new Date();
+    const currentDay = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - currentDay + (currentDay === 0 ? -6 : 1)); // Adjust for Sunday
+    monday.setHours(0, 0, 0, 0);
+    
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    
+    const mondayString = monday.toISOString();
+    const sundayString = sunday.toISOString();
+    
     const { data, error } = await supabase
       .from('reports')
       .select('*')
       .eq('new_account_number', accountNumber)
       .eq('weekly', true)
+      .gte('created_at', mondayString)
+      .lte('created_at', sundayString)
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -94,11 +110,21 @@ export async function getLatestMonthlyReport(accountNumber: string): Promise<Rep
   try {
     const supabase = await createClient();
     
+    // Get the current month's report
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+    const firstDayString = firstDayOfMonth.toISOString();
+    const lastDayString = lastDayOfMonth.toISOString();
+    
     const { data, error } = await supabase
       .from('reports')
       .select('*')
       .eq('new_account_number', accountNumber)
       .eq('monthly', true)
+      .gte('created_at', firstDayString)
+      .lte('created_at', lastDayString)
       .order('created_at', { ascending: false })
       .limit(1);
 

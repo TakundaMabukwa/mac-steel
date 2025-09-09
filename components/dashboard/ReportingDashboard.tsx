@@ -58,24 +58,20 @@ export function ReportingDashboard() {
       
       setReportsLoading(true);
       try {
-        // Get all reports for this account number
-        const allReportsData = await getReportsByAccountNumber(selectedCostCenter.new_account_number);
+        // Get the latest reports for each time period
+        const [daily, weekly, monthly, allReportsData] = await Promise.all([
+          getLatestDailyReport(selectedCostCenter.new_account_number),
+          getLatestWeeklyReport(selectedCostCenter.new_account_number),
+          getLatestMonthlyReport(selectedCostCenter.new_account_number),
+          getReportsByAccountNumber(selectedCostCenter.new_account_number)
+        ]);
+        
+        console.log('Latest daily report (yesterday):', daily);
+        console.log('Latest weekly report (this week):', weekly);
+        console.log('Latest monthly report (this month):', monthly);
         console.log('All reports found:', allReportsData);
+        
         setAllReports(allReportsData);
-        
-        // Categorize the reports
-        const categorized = categorizeReports(allReportsData);
-        console.log('Categorized reports:', categorized);
-        
-        // Get the most recent report of each type
-        const daily = categorized.daily.length > 0 ? categorized.daily[0] : null;
-        const weekly = categorized.weekly.length > 0 ? categorized.weekly[0] : null;
-        const monthly = categorized.monthly.length > 0 ? categorized.monthly[0] : null;
-        
-        console.log('Most recent daily report:', daily);
-        console.log('Most recent weekly report:', weekly);
-        console.log('Most recent monthly report:', monthly);
-        
         setDailyReport(daily);
         setWeeklyReport(weekly);
         setMonthlyReport(monthly);
@@ -162,111 +158,108 @@ export function ReportingDashboard() {
               {/* Daily Report Card */}
               <div className="bg-white hover:shadow-md p-6 border border-gray-200 rounded-lg transition-shadow">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-lg">Daily</h3>
-                  {categorizeReports(allReports).daily.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Daily</h3>
+                    <p className="text-gray-500 text-xs">Yesterday's Report</p>
+                  </div>
+                  {dailyReport && (
                     <span className="bg-blue-100 px-2 py-1 rounded-full font-medium text-blue-800 text-xs">
-                      {categorizeReports(allReports).daily.length} available
+                      Available
                     </span>
                   )}
                 </div>
                 
-                {categorizeReports(allReports).daily.length > 0 ? (
+                {dailyReport ? (
                   <div className="space-y-2">
-                    {categorizeReports(allReports).daily.slice(0, 3).map((report, index) => (
-                      <div key={report.id} className="pl-3 border-blue-200 border-l-2">
-                        <a
-                          href={report.url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm hover:underline"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Download {index === 0 ? '(Latest)' : `(${new Date(report.created_at).toLocaleDateString()})`}</span>
-                        </a>
-                      </div>
-                    ))}
-                    {categorizeReports(allReports).daily.length > 3 && (
-                      <div className="mt-2 text-gray-500 text-xs">
-                        +{categorizeReports(allReports).daily.length - 3} more reports
-                      </div>
-                    )}
+                    <div className="pl-3 border-blue-200 border-l-2">
+                      <a
+                        href={dailyReport.url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm hover:underline"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download Yesterday's Report</span>
+                      </a>
+                      <p className="mt-1 text-gray-500 text-xs">
+                        Generated: {new Date(dailyReport.created_at).toLocaleDateString()} at {new Date(dailyReport.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <span className="text-gray-400 text-sm">No daily reports available</span>
+                  <span className="text-gray-400 text-sm">No daily report available for yesterday</span>
                 )}
               </div>
 
               {/* Weekly Report Card */}
               <div className="bg-white hover:shadow-md p-6 border border-gray-200 rounded-lg transition-shadow">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-lg">Weekly</h3>
-                  {categorizeReports(allReports).weekly.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Weekly</h3>
+                    <p className="text-gray-500 text-xs">This Week's Report</p>
+                  </div>
+                  {weeklyReport && (
                     <span className="bg-green-100 px-2 py-1 rounded-full font-medium text-green-800 text-xs">
-                      {categorizeReports(allReports).weekly.length} available
+                      Available
                     </span>
                   )}
                 </div>
                 
-                {categorizeReports(allReports).weekly.length > 0 ? (
+                {weeklyReport ? (
                   <div className="space-y-2">
-                    {categorizeReports(allReports).weekly.slice(0, 3).map((report, index) => (
-                      <div key={report.id} className="pl-3 border-green-200 border-l-2">
-                        <a
-                          href={report.url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center space-x-2 text-green-600 hover:text-green-700 text-sm hover:underline"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Download {index === 0 ? '(Latest)' : `(${new Date(report.created_at).toLocaleDateString()})`}</span>
-                        </a>
-                      </div>
-                    ))}
-                    {categorizeReports(allReports).weekly.length > 3 && (
-                      <div className="mt-2 text-gray-500 text-xs">
-                        +{categorizeReports(allReports).weekly.length - 3} more reports
-                      </div>
-                    )}
+                    <div className="pl-3 border-green-200 border-l-2">
+                      <a
+                        href={weeklyReport.url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2 text-green-600 hover:text-green-700 text-sm hover:underline"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download This Week's Report</span>
+                      </a>
+                      <p className="mt-1 text-gray-500 text-xs">
+                        Generated: {new Date(weeklyReport.created_at).toLocaleDateString()} at {new Date(weeklyReport.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <span className="text-gray-400 text-sm">No weekly reports available</span>
+                  <span className="text-gray-400 text-sm">No weekly report available for this week</span>
                 )}
               </div>
 
               {/* Monthly Report Card */}
               <div className="bg-white hover:shadow-md p-6 border border-gray-200 rounded-lg transition-shadow">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-lg">Monthly</h3>
-                  {categorizeReports(allReports).monthly.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Monthly</h3>
+                    <p className="text-gray-500 text-xs">This Month's Report</p>
+                  </div>
+                  {monthlyReport && (
                     <span className="bg-purple-100 px-2 py-1 rounded-full font-medium text-purple-800 text-xs">
-                      {categorizeReports(allReports).monthly.length} available
+                      Available
                     </span>
                   )}
                 </div>
                 
-                {categorizeReports(allReports).monthly.length > 0 ? (
+                {monthlyReport ? (
                   <div className="space-y-2">
-                    {categorizeReports(allReports).monthly.slice(0, 3).map((report, index) => (
-                      <div key={report.id} className="pl-3 border-purple-200 border-l-2">
-                        <a
-                          href={report.url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center space-x-2 text-purple-600 hover:text-purple-700 text-sm hover:underline"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Download {index === 0 ? '(Latest)' : `(${new Date(report.created_at).toLocaleDateString()})`}</span>
-                        </a>
-                      </div>
-                    ))}
-                    {categorizeReports(allReports).monthly.length > 3 && (
-                      <div className="mt-2 text-gray-500 text-xs">
-                        +{categorizeReports(allReports).monthly.length - 3} more reports
-                      </div>
-                    )}
+                    <div className="pl-3 border-purple-200 border-l-2">
+                      <a
+                        href={monthlyReport.url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2 text-purple-600 hover:text-purple-700 text-sm hover:underline"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download This Month's Report</span>
+                      </a>
+                      <p className="mt-1 text-gray-500 text-xs">
+                        Generated: {new Date(monthlyReport.created_at).toLocaleDateString()} at {new Date(monthlyReport.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <span className="text-gray-400 text-sm">No monthly reports available</span>
+                  <span className="text-gray-400 text-sm">No monthly report available for this month</span>
                 )}
               </div>
             </div>

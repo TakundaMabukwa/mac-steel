@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, FileText, Clock } from 'lucide-react';
+import { Eye, FileText, Clock, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -142,16 +142,38 @@ export function StartTimeDashboard() {
           </div>
         </div>
 
+        {/* View Mode Toggle Buttons */}
+        <div className="flex space-x-2">
+          <Button
+            onClick={() => setViewMode('vehicles')}
+            variant={viewMode === 'vehicles' ? 'default' : 'outline'}
+            className={viewMode === 'vehicles' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
+          >
+            <Car className="mr-2 w-4 h-4" />
+            All Vehicles
+          </Button>
+          <Button
+            onClick={() => setViewMode('reports')}
+            variant={viewMode === 'reports' ? 'default' : 'outline'}
+            className={viewMode === 'reports' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
+          >
+            <FileText className="mr-2 w-4 h-4" />
+            Late Vehicles
+          </Button>
+        </div>
+
         {/* Render appropriate component based on view mode */}
         {viewMode === 'vehicles' ? (
           <VehicleDetailsTable 
             costCenter={selectedCostCenter} 
-            onBack={handleBackToTable} 
+            onBack={handleBackToTable}
+            showLateVehiclesOnly={false}
           />
         ) : (
-          <LateVehicleReports 
+          <VehicleDetailsTable 
             costCenter={selectedCostCenter} 
-            onBack={handleBackToTable} 
+            onBack={handleBackToTable}
+            showLateVehiclesOnly={true}
           />
         )}
 
