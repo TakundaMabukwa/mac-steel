@@ -31,7 +31,7 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
   const hasInitialized = useRef(false);
 
   // Get vehicles for this specific cost center
-  const vehicles = getVehiclesByCostCenter(costCenter.new_account_number);
+  const vehicles = getVehiclesByCostCenter(costCenter.new_account_number || '');
 
   // Set up visual update indicators for vehicles
   useEffect(() => {
