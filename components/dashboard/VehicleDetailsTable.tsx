@@ -151,8 +151,6 @@ export function VehicleDetailsTable({ costCenter, onBack, showLateVehiclesOnly =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - will only run once
 
-
-
   const handleReasonUpdate = async () => {
     if (!selectedVehicle || !selectedReason) return;
 
@@ -309,15 +307,24 @@ export function VehicleDetailsTable({ costCenter, onBack, showLateVehiclesOnly =
               align: 'left' as const,
               width: 'w-20',
               render: (item: Vehicle) => (
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  item.status === 'active' 
-                    ? 'bg-green-100 text-green-800' 
-                    : item.status === 'late' || item.status === 'not_on_time'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {item.status === 'not_on_time' ? 'Late' : item.status || 'Unknown'}
-                </span>
+                <div className="flex items-center space-x-1">
+                  <div className={`w-2 h-2 rounded-full ${
+                    item.status === 'active' 
+                      ? 'bg-green-500 animate-pulse' 
+                      : item.status === 'late' || item.status === 'not_on_time'
+                      ? 'bg-red-500'
+                      : 'bg-gray-400'
+                  }`}></div>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    item.status === 'active' 
+                      ? 'bg-green-100 text-green-800 border border-green-200' 
+                      : item.status === 'late' || item.status === 'not_on_time'
+                      ? 'bg-red-100 text-red-800 border border-red-200'
+                      : 'bg-gray-100 text-gray-800 border border-gray-200'
+                  }`}>
+                    {item.status === 'not_on_time' ? 'Late' : item.status || 'Unknown'}
+                  </span>
+                </div>
               )
             },
             {
@@ -327,9 +334,12 @@ export function VehicleDetailsTable({ costCenter, onBack, showLateVehiclesOnly =
               sortable: true,
               width: 'w-24',
               render: (item: Vehicle) => (
-                <span className="font-medium text-gray-900 text-sm">
-                  {item.plate || 'N/A'}
-                </span>
+                <div className="flex items-center space-x-1">
+                  <span className="text-lg">🚛</span>
+                  <span className="font-bold text-gray-900 text-sm">
+                    {item.plate || 'N/A'}
+                  </span>
+                </div>
               )
             },
             {
@@ -434,7 +444,7 @@ export function VehicleDetailsTable({ costCenter, onBack, showLateVehiclesOnly =
               <Button
                 onClick={handleReasonUpdate}
                 disabled={!selectedReason || isUpdatingReason}
-                className="bg-blue-800 hover:bg-blue-900 text-white"
+                className="bg-blue-50 hover:bg-blue-100 border-blue-600 text-blue-600"
               >
                 {isUpdatingReason ? 'Updating...' : 'Update Reason'}
               </Button>

@@ -266,24 +266,24 @@ export function LateVehicleReports({ costCenter, onBack }: LateVehicleReportsPro
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-macsteel-100">
               <tr>
-                <th className="px-6 py-3 font-medium text-gray-500 text-xs text-left uppercase tracking-wider">
+                <th className="px-6 py-3 font-medium text-macsteel-700 text-xs text-left uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-xs text-left uppercase tracking-wider">
+                <th className="px-6 py-3 font-medium text-macsteel-700 text-xs text-left uppercase tracking-wider">
                   Vehicle Registration
                 </th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-xs text-left uppercase tracking-wider">
+                <th className="px-6 py-3 font-medium text-macsteel-700 text-xs text-left uppercase tracking-wider">
                   Company
                 </th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-xs text-left uppercase tracking-wider">
+                <th className="px-6 py-3 font-medium text-macsteel-700 text-xs text-left uppercase tracking-wider">
                   Start Time
                 </th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-xs text-left uppercase tracking-wider">
+                <th className="px-6 py-3 font-medium text-macsteel-700 text-xs text-left uppercase tracking-wider">
                   Reason
                 </th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-xs text-left uppercase tracking-wider">
+                <th className="px-6 py-3 font-medium text-macsteel-700 text-xs text-left uppercase tracking-wider">
                   Created At
                 </th>
               </tr>

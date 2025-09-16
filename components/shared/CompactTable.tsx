@@ -46,8 +46,16 @@ export function CompactTable({
   return (
     <div className="space-y-4">
       {/* Header Section - Responsive */}
-      <div className="flex lg:flex-row flex-col justify-between items-start lg:items-center gap-4">
-        <h3 className="font-semibold text-gray-900 text-lg">{title}</h3>
+      <div className="flex lg:flex-row flex-col justify-between items-start lg:items-center gap-4 mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="flex justify-center items-center bg-slate-100 rounded-lg w-10 h-10">
+            <span className="font-bold text-slate-600 text-lg">📊</span>
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-900 text-xl">{title}</h3>
+            <p className="text-slate-500 text-sm">Fleet management and analytics</p>
+          </div>
+        </div>
         <div className="flex sm:flex-row flex-col items-start sm:items-center sm:space-x-3 space-y-3 sm:space-y-0 w-full lg:w-auto">
           {/* Search Bar - Responsive width */}
           <div className="relative w-full sm:w-80">
@@ -56,21 +64,21 @@ export function CompactTable({
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-white pl-10 border-gray-300 focus:border-blue-800 focus:ring-blue-800 text-sm"
+              className="bg-white shadow-sm pl-10 border-slate-300 focus:border-slate-500 rounded-lg focus:ring-slate-500 text-sm"
             />
           </div>
           
           {/* Action Buttons - Responsive */}
           <div className="flex items-center space-x-2">
             {showDownload && (
-              <Button variant="outline" size="sm" className="hover:bg-blue-50 px-3 py-2 border-blue-800 h-9 text-blue-800 text-sm">
+              <Button variant="outline" size="sm" className="hover:bg-slate-50 shadow-sm px-4 py-2 border-slate-300 rounded-lg h-10 font-medium text-slate-600 text-sm">
                 <Download className="mr-2 w-4 h-4" />
-                <span className="hidden sm:inline">Download (csv)</span>
+                <span className="hidden sm:inline">Export CSV</span>
                 <span className="sm:hidden">CSV</span>
               </Button>
             )}
             {showColumns && (
-              <Button variant="outline" size="sm" className="hover:bg-blue-50 px-3 py-2 border-blue-800 h-9 text-blue-800 text-sm">
+              <Button variant="outline" size="sm" className="hover:bg-slate-50 shadow-sm px-4 py-2 border-slate-300 rounded-lg h-10 font-medium text-slate-600 text-sm">
                 Columns
                 <ChevronDown className="ml-2 w-4 h-4" />
               </Button>
@@ -80,39 +88,39 @@ export function CompactTable({
       </div>
       
       {/* Table - Responsive */}
-      <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-blue-800">
+              <tr className="bg-macsteel-100 border-macsteel-200 border-b">
               {columns.map((column) => (
-                <th 
-                  key={column.key} 
-                  className={`px-3 py-3 font-semibold text-white text-xs uppercase tracking-wider ${
-                    column.align === 'center' ? 'text-center' : 
-                    column.align === 'right' ? 'text-right' : 'text-left'
-                  } ${column.width || ''}`}
-                >
-                  <div className="flex justify-center items-center space-x-1">
+              <th 
+                key={column.key} 
+                className={`px-4 py-3 font-semibold text-macsteel-700 text-sm uppercase tracking-wider ${
+                  column.align === 'center' ? 'text-center' : 
+                  column.align === 'right' ? 'text-right' : 'text-left'
+                } ${column.width || ''}`}
+              >
+                  <div className="flex justify-center items-center space-x-2">
                     <span>{column.label}</span>
                     {column.sortable && (
-                      <ArrowUpDown className="ml-1 w-4 h-4" />
+                      <ArrowUpDown className="opacity-80 ml-1 w-4 h-4" />
                     )}
                   </div>
                 </th>
               ))}
-              <th className="px-3 py-3 font-semibold text-white text-xs text-center uppercase tracking-wider">
+              <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody>
             {filteredData.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50 border-gray-100 border-b">
+              <tr key={index} className="hover:bg-slate-50 border-slate-200 border-b transition-all duration-200">
                 {columns.map((column) => (
                   <td 
                     key={column.key} 
-                    className={`px-3 py-3 text-sm ${
+                    className={`px-4 py-2 text-sm ${
                       column.align === 'center' ? 'text-center' : 
                       column.align === 'right' ? 'text-right' : 'text-left'
                     }`}
@@ -120,15 +128,15 @@ export function CompactTable({
                     {column.render ? column.render(item) : String(item[column.key] || '')}
                   </td>
                 ))}
-                                 <td className="px-3 py-3 text-center">
+                <td className="px-4 py-2 text-center">
                    {onViewCostCenter ? (
                      <Button
                        onClick={() => onViewCostCenter(item)}
                        variant="ghost"
                        size="sm"
-                       className="hover:bg-blue-50 p-2 h-8 text-blue-600 hover:text-blue-700"
+                       className="hover:bg-slate-100 p-2 rounded-lg h-8 font-medium text-slate-600 hover:text-slate-700 transition-all duration-200"
                      >
-                       <Eye className="mr-2 w-4 h-4" />
+                       <Eye className="mr-1 w-3 h-3" />
                        View
                      </Button>
                    ) : onActionClick ? (
@@ -136,17 +144,17 @@ export function CompactTable({
                        onClick={() => onActionClick(item)}
                        variant="ghost"
                        size="sm"
-                       className="hover:bg-blue-50 p-2 w-8 h-8 text-blue-800 hover:text-blue-900"
+                       className="hover:bg-slate-100 p-1 rounded-lg w-8 h-8 text-slate-600 hover:text-slate-700 transition-all duration-200"
                      >
-                       {actionIcon || <Edit className="w-4 h-4" />}
+                       {actionIcon || <Edit className="w-3 h-3" />}
                      </Button>
                    ) : (
                      <Button
                        variant="ghost"
                        size="sm"
-                       className="hover:bg-gray-100 p-2 w-8 h-8 text-gray-600 hover:text-gray-800"
+                       className="hover:bg-slate-100 p-1 rounded-lg w-8 h-8 text-slate-600 hover:text-slate-700 transition-all duration-200"
                      >
-                       <Edit className="w-4 h-4" />
+                       <Edit className="w-3 h-3" />
                      </Button>
                    )}
                  </td>

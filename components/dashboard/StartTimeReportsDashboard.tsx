@@ -283,23 +283,23 @@ export function StartTimeReportsDashboard() {
                  <div className="overflow-x-auto">
                    <table className="w-full">
                      <thead>
-                       <tr className="bg-blue-800">
-                         <th className="px-4 py-3 font-semibold text-white text-sm text-left uppercase tracking-wider">
+                       <tr className="bg-macsteel-100">
+                         <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-left uppercase tracking-wider">
                            Date
                          </th>
-                         <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                         <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                            Number of vehicles
                          </th>
-                         <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                         <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                            Number of vehicles on time
                          </th>
-                         <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                         <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                            Number not on Time
                          </th>
-                         <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                         <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                            % on time
                          </th>
-                         <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                         <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                            % not on time
                          </th>
                        </tr>
@@ -347,23 +347,23 @@ export function StartTimeReportsDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-blue-800">
-                      <th className="px-4 py-3 font-semibold text-white text-sm text-left uppercase tracking-wider">
+                    <tr className="bg-macsteel-100">
+                      <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-left uppercase tracking-wider">
                         Date
                       </th>
-                      <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                      <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                         Number of vehicles
                       </th>
-                      <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                      <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                         Number of vehicles on time
                       </th>
-                      <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                      <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                         Number not on Time
                       </th>
-                      <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                      <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                         % on time
                       </th>
-                      <th className="px-4 py-3 font-semibold text-white text-sm text-center uppercase tracking-wider">
+                      <th className="px-4 py-3 font-semibold text-macsteel-700 text-sm text-center uppercase tracking-wider">
                         % not on time
                       </th>
                     </tr>

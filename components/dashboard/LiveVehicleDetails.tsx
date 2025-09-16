@@ -232,71 +232,83 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
              {/* Stats Cards */}
        <div className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
          <Card 
-           className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+           className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 ${
              selectedFilter === 'all' 
-               ? 'bg-gradient-to-br from-blue-100 to-blue-200 border-blue-300 ring-2 ring-blue-400' 
-               : 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200'
+               ? 'bg-gradient-to-br from-macsteel-100 to-macsteel-200 border-macsteel-300 ring-2 ring-macsteel-400 shadow-lg' 
+               : 'bg-gradient-to-br from-macsteel-50 to-macsteel-100 border-macsteel-200 hover:border-macsteel-300'
            }`}
            onClick={() => handleFilterChange('all')}
          >
-           <CardHeader className="pb-2">
-             <CardTitle className="flex items-center font-medium text-blue-700 text-sm">
-               <Car className="mr-2 w-4 h-4" />
+           <CardHeader className="pb-3">
+             <CardTitle className="flex items-center font-semibold text-macsteel-700 text-sm">
+               <div className="flex justify-center items-center bg-macsteel-200 mr-3 rounded-lg w-8 h-8">
+                 <Car className="w-4 h-4 text-macsteel-600" />
+               </div>
                Total Vehicles
              </CardTitle>
            </CardHeader>
            <CardContent>
-             <div className="font-bold text-blue-900 text-2xl">{totalVehicles}</div>
+             <div className="font-bold text-macsteel-900 text-3xl">{totalVehicles}</div>
+             <div className="mt-1 text-macsteel-600 text-xs">Fleet Size</div>
            </CardContent>
          </Card>
          
          <Card 
-           className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+           className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 ${
              selectedFilter === 'active' 
-               ? 'bg-gradient-to-br from-green-100 to-green-200 border-green-300 ring-2 ring-blue-400' 
-               : 'bg-gradient-to-br from-green-50 to-green-100 border-green-200'
+               ? 'bg-gradient-to-br from-success-100 to-success-200 border-success-300 ring-2 ring-success-400 shadow-lg' 
+               : 'bg-gradient-to-br from-success-50 to-success-100 border-success-200 hover:border-success-300'
            }`}
            onClick={() => handleFilterChange('active')}
          >
-           <CardHeader className="pb-2">
-             <CardTitle className="flex items-center font-medium text-green-700 text-sm">
-               <Zap className="mr-2 w-4 h-4" />
+           <CardHeader className="pb-3">
+             <CardTitle className="flex items-center font-semibold text-success-700 text-sm">
+               <div className="flex justify-center items-center bg-success-200 mr-3 rounded-lg w-8 h-8">
+                 <Zap className="w-4 h-4 text-success-600" />
+               </div>
                Active Vehicles
              </CardTitle>
            </CardHeader>
            <CardContent>
-             <div className="font-bold text-green-900 text-2xl">{activeVehicles}</div>
+             <div className="font-bold text-success-900 text-3xl">{activeVehicles}</div>
+             <div className="mt-1 text-success-600 text-xs">Currently Moving</div>
            </CardContent>
          </Card>
          
          <Card 
-           className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+           className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 ${
              selectedFilter === 'stopped' 
-               ? 'bg-gradient-to-br from-orange-100 to-orange-200 border-orange-300 ring-2 ring-orange-400' 
-               : 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200'
+               ? 'bg-gradient-to-br from-warning-100 to-warning-200 border-warning-300 ring-2 ring-warning-400 shadow-lg' 
+               : 'bg-gradient-to-br from-warning-50 to-warning-100 border-warning-200 hover:border-warning-300'
              }`}
            onClick={() => handleFilterChange('stopped')}
          >
-           <CardHeader className="pb-2">
-             <CardTitle className="flex items-center font-medium text-orange-700 text-sm">
-               <Shield className="mr-2 w-4 h-4" />
+           <CardHeader className="pb-3">
+             <CardTitle className="flex items-center font-semibold text-warning-700 text-sm">
+               <div className="flex justify-center items-center bg-warning-200 mr-3 rounded-lg w-8 h-8">
+                 <Shield className="w-4 h-4 text-warning-600" />
+               </div>
                Stopped Vehicles
              </CardTitle>
            </CardHeader>
            <CardContent>
-             <div className="font-bold text-orange-900 text-2xl">{stoppedVehicles}</div>
+             <div className="font-bold text-warning-900 text-3xl">{stoppedVehicles}</div>
+             <div className="mt-1 text-warning-600 text-xs">Currently Idle</div>
            </CardContent>
          </Card>
          
-         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-           <CardHeader className="pb-2">
-             <CardTitle className="flex items-center font-medium text-purple-700 text-sm">
-               <Gauge className="mr-2 w-4 h-4" />
+         <Card className="bg-gradient-to-br from-macsteel-50 to-macsteel-100 hover:shadow-xl border-macsteel-200 hover:border-macsteel-300 hover:scale-105 transition-all duration-300">
+           <CardHeader className="pb-3">
+             <CardTitle className="flex items-center font-semibold text-macsteel-700 text-sm">
+               <div className="flex justify-center items-center bg-macsteel-200 mr-3 rounded-lg w-8 h-8">
+                 <Gauge className="w-4 h-4 text-macsteel-600" />
+               </div>
                Avg Speed
              </CardTitle>
            </CardHeader>
            <CardContent>
-             <div className="font-bold text-purple-900 text-2xl">{averageSpeed.toFixed(1)} km/h</div>
+             <div className="font-bold text-macsteel-900 text-3xl">{averageSpeed.toFixed(1)} km/h</div>
+             <div className="mt-1 text-macsteel-600 text-xs">Fleet Average</div>
            </CardContent>
          </Card>
        </div>
@@ -304,13 +316,13 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
                            {/* Filter Indicator */}
         {selectedFilter !== 'all' && (
           <div className="col-span-full">
-            <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg">
+            <div className="bg-macsteel-50 p-4 border border-macsteel-200 rounded-lg">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-2">
-                  <span className="font-medium text-gray-700 text-sm">
+                  <span className="font-medium text-macsteel-700 text-sm">
                     Showing {selectedFilter === 'active' ? 'Active' : 'Stopped'} Vehicles:
                   </span>
-                  <span className="bg-blue-100 px-2.5 py-0.5 rounded-full font-medium text-blue-800 text-xs">
+                  <span className="bg-macsteel-200 px-2.5 py-0.5 rounded-full font-medium text-macsteel-800 text-xs">
                     {isFiltering ? '...' : `${filteredVehicles.length} of ${vehicles.length}`}
                   </span>
                 </div>
@@ -318,7 +330,7 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
                   size="sm"
                   variant="outline"
                   onClick={() => handleFilterChange('all')}
-                  className="text-gray-600 hover:text-gray-800"
+                  className="border-macsteel-300 hover:border-macsteel-400 text-macsteel-600 hover:text-macsteel-800"
                   disabled={isFiltering}
                 >
                   {isFiltering ? 'Loading...' : 'Show All Vehicles'}
@@ -440,7 +452,7 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
                     y={activeY}
                     width={barWidth}
                     height={activeHeight}
-                    fill="#10b981"
+                    fill="#22c55e"
                     rx="4"
                     className="hover:opacity-80 transition-all duration-300"
                   />
@@ -478,7 +490,7 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
                     y={totalY}
                     width={barWidth}
                     height={totalHeight}
-                    fill="#3b82f6"
+                    fill="#0ea5e9"
                     rx="4"
                     className="hover:opacity-80 transition-all duration-300"
                   />
@@ -507,17 +519,17 @@ export function LiveVehicleDetails({ costCenter, onBack }: LiveVehicleDetailsPro
         
         {/* Current Status Summary with better spacing */}
         <div className="gap-6 grid grid-cols-3 mt-8 text-center">
-          <div className="bg-green-50 p-4 border border-green-200 rounded-lg">
-            <div className="mb-2 font-bold text-green-600 text-2xl">{activeVehicles}</div>
-            <div className="text-green-700 text-sm">Currently Active</div>
+          <div className="bg-success-50 hover:shadow-md p-4 border border-success-200 rounded-lg transition-all duration-200">
+            <div className="mb-2 font-bold text-success-600 text-2xl">{activeVehicles}</div>
+            <div className="text-success-700 text-sm">Currently Active</div>
           </div>
-          <div className="bg-orange-50 p-4 border border-orange-200 rounded-lg">
-            <div className="mb-2 font-bold text-orange-600 text-2xl">{stoppedVehicles}</div>
-            <div className="text-orange-700 text-sm">Currently Stopped</div>
+          <div className="bg-warning-50 hover:shadow-md p-4 border border-warning-200 rounded-lg transition-all duration-200">
+            <div className="mb-2 font-bold text-warning-600 text-2xl">{stoppedVehicles}</div>
+            <div className="text-warning-700 text-sm">Currently Stopped</div>
           </div>
-          <div className="bg-blue-50 p-4 border border-blue-200 rounded-lg">
-            <div className="mb-2 font-bold text-blue-600 text-2xl">{totalVehicles}</div>
-            <div className="text-blue-700 text-sm">Total Fleet</div>
+          <div className="bg-macsteel-50 hover:shadow-md p-4 border border-macsteel-200 rounded-lg transition-all duration-200">
+            <div className="mb-2 font-bold text-macsteel-600 text-2xl">{totalVehicles}</div>
+            <div className="text-macsteel-700 text-sm">Total Fleet</div>
           </div>
         </div>
       </div>

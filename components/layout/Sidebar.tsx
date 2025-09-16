@@ -33,11 +33,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   };
 
   return (
-    <aside className={`fixed left-0 top-0 h-full bg-blue-50 border-r border-blue-200 transition-all duration-300 ease-in-out z-30 ${
+    <aside className={`fixed left-0 top-0 h-full bg-macsteel-100 border-r border-macsteel-200 transition-all duration-300 ease-in-out z-30 ${
       isCollapsed ? 'w-16' : 'w-64'
     }`}>
       {/* Header with toggle button */}
-      <div className="flex justify-between items-center p-4 border-b border-blue-200">
+      <div className="flex justify-between items-center p-4 border-macsteel-200 border-b">
         {!isCollapsed && (
           <div className="flex flex-1 justify-center">
             <img 
@@ -51,7 +51,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           onClick={onToggle}
                 variant="ghost"
           size="sm"
-          className="hover:bg-blue-100 p-2 w-8 h-8 text-blue-700"
+          className="hover:bg-macsteel-50 p-2 w-8 h-8 text-macsteel-600"
         >
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </Button>
@@ -62,7 +62,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         {/* Dashboard Section */}
         <div className="space-y-1">
           {!isCollapsed && (
-            <div className="px-3 py-2 font-semibold text-blue-600 text-xs uppercase tracking-wider">
+            <div className="px-3 py-2 font-semibold text-macsteel-600 text-xs uppercase tracking-wider">
               Dashboard
             </div>
           )}
@@ -72,8 +72,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               variant={pathname.includes('start-time') ? 'default' : 'ghost'}
               className={`w-full justify-start ${
                 pathname.includes('start-time') 
-                  ? 'bg-blue-100 text-blue-800 border-r-2 border-blue-800' 
-                  : 'text-blue-700 hover:bg-blue-100'
+                  ? 'bg-macsteel-100 text-macsteel-900 border-r-2 border-macsteel-600' 
+                  : 'text-steel-600 hover:bg-macsteel-50'
               }`}
             >
               <Clock className="mr-3 w-5 h-5" />
@@ -86,8 +86,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               variant={pathname.includes('start-time-dashboard') ? 'default' : 'ghost'}
               className={`w-full justify-start ${
                 pathname.includes('start-time-dashboard') 
-                  ? 'bg-blue-100 text-blue-800 border-r-2 border-blue-800' 
-                  : 'text-blue-700 hover:bg-blue-100'
+                  ? 'bg-macsteel-100 text-macsteel-900 border-r-2 border-macsteel-600' 
+                  : 'text-steel-600 hover:bg-macsteel-50'
               }`}
             >
               <LayoutDashboard className="mr-3 w-5 h-5" />
@@ -100,8 +100,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               variant={pathname.includes('utilisation') ? 'default' : 'ghost'}
               className={`w-full justify-start ${
                 pathname.includes('utilisation') 
-                  ? 'bg-blue-100 text-blue-800 border-r-2 border-blue-800' 
-                  : 'text-blue-700 hover:bg-blue-100'
+                  ? 'bg-macsteel-100 text-macsteel-900 border-r-2 border-macsteel-600' 
+                  : 'text-steel-600 hover:bg-macsteel-50'
               }`}
             >
               <TrendingUp className="mr-3 w-5 h-5" />
@@ -114,8 +114,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               variant={pathname.includes('reporting') ? 'default' : 'ghost'}
               className={`w-full justify-start ${
                 pathname.includes('reporting') 
-                  ? 'bg-blue-100 text-blue-800 border-r-2 border-blue-800' 
-                  : 'text-blue-700 hover:bg-blue-100'
+                  ? 'bg-macsteel-100 text-macsteel-900 border-r-2 border-macsteel-600' 
+                  : 'text-steel-600 hover:bg-macsteel-50'
               }`}
             >
               <FileText className="mr-3 w-5 h-5" />
@@ -128,7 +128,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         {/* Vehicles Section */}
         <div className="space-y-1">
           {!isCollapsed && (
-            <div className="px-3 py-2 font-semibold text-blue-600 text-xs uppercase tracking-wider">
+            <div className="px-3 py-2 font-semibold text-macsteel-600 text-xs uppercase tracking-wider">
               Vehicles
             </div>
           )}
@@ -138,8 +138,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               variant={pathname.includes('vehicles') ? 'default' : 'ghost'}
               className={`w-full justify-start ${
                 pathname.includes('vehicles') 
-                  ? 'bg-blue-100 text-blue-800 border-r-2 border-blue-800' 
-                  : 'text-blue-700 hover:bg-blue-100'
+                  ? 'bg-macsteel-100 text-macsteel-900 border-r-2 border-macsteel-600' 
+                  : 'text-steel-600 hover:bg-macsteel-50'
               }`}
             >
               <Car className="mr-3 w-5 h-5" />
@@ -150,11 +150,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       </nav>
 
       {/* Logout button at bottom */}
-      <div className="mt-4 pt-4 border-t border-blue-200">
+      <div className="mt-4 pt-4 border-macsteel-200 border-t">
                   <Button
           onClick={handleLogout}
                     variant="ghost"
-          className="justify-start hover:bg-red-50 w-full text-red-600 hover:text-red-700"
+          className="justify-start hover:bg-warning-50 w-full text-warning-600 hover:text-warning-700"
                   >
           <LogOut className="mr-3 w-5 h-5" />
           {!isCollapsed && <span>Logout</span>}

@@ -13,6 +13,10 @@ import { updateCostCenterExitTime } from '@/lib/actions/costCenters';
 import { VehicleDetailsTable } from './VehicleDetailsTable';
 import { LateVehicleReports } from './LateVehicleReports';
 import { CompactTable } from '@/components/shared/CompactTable';
+import { StatCards } from './StatCards';
+import { CostCenterHeader } from './CostCenterHeader';
+import { Vehicle, getAllVehiclesWithStartTime } from '@/lib/actions/vehicles';
+import { useEffect } from 'react';
 
 export function StartTimeDashboard() {
   const { costCenters, isLoading, error } = useCostCenters();
@@ -22,6 +26,8 @@ export function StartTimeDashboard() {
   const [newExitTime, setNewExitTime] = useState('');
   const [isUpdatingExitTime, setIsUpdatingExitTime] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
 
   const handleViewCostCenter = (costCenter: MacSteelCostCenter) => {
     setSelectedCostCenter(costCenter);
@@ -66,6 +72,74 @@ export function StartTimeDashboard() {
     // This would be handled by the parent component
   };
 
+  // Load vehicles when cost center is selected
+  useEffect(() => {
+    const loadVehicles = async () => {
+      if (!selectedCostCenter?.new_account_number) {
+        setVehicles([]);
+        return;
+      }
+
+      try {
+        setIsLoadingVehicles(true);
+        const allVehicles = await getAllVehiclesWithStartTime();
+        // Filter vehicles by cost center
+        const costCenterVehicles = allVehicles.filter(
+          vehicle => vehicle.account_number === selectedCostCenter.new_account_number
+        );
+        setVehicles(costCenterVehicles);
+      } catch (err) {
+        console.error('Failed to load vehicles:', err);
+        setVehicles([]);
+      } finally {
+        setIsLoadingVehicles(false);
+      }
+    };
+
+    loadVehicles();
+  }, [selectedCostCenter]);
+
+  // Calculate statistics for the cost center
+  const calculateStatistics = () => {
+    if (!vehicles.length || !selectedCostCenter) {
+      return {
+        totalVehicles: 0,
+        departingBefore9AM: 0,
+        onTimePercentage: 0,
+        latePercentage: 0
+      };
+    }
+
+    const totalVehicles = vehicles.length;
+    
+    // Calculate vehicles departing before 9:00 AM
+    const departingBefore9AM = vehicles.filter(vehicle => {
+      if (!vehicle.start_time) return false;
+      const startTime = new Date(`2000-01-01T${vehicle.start_time}`);
+      const nineAM = new Date(`2000-01-01T09:00:00`);
+      return startTime < nineAM;
+    }).length;
+
+    // Calculate on-time vs late vehicles
+    const onTimeVehicles = vehicles.filter(vehicle => {
+      if (!vehicle.start_time || !selectedCostCenter.exit_time) return false;
+      const startTime = new Date(`2000-01-01T${vehicle.start_time}`);
+      const exitTime = new Date(`2000-01-01T${selectedCostCenter.exit_time}`);
+      return startTime <= exitTime;
+    }).length;
+
+    const lateVehicles = totalVehicles - onTimeVehicles;
+    const onTimePercentage = totalVehicles > 0 ? Math.round((onTimeVehicles / totalVehicles) * 100) : 0;
+    const latePercentage = totalVehicles > 0 ? Math.round((lateVehicles / totalVehicles) * 100) : 0;
+
+    return {
+      totalVehicles,
+      departingBefore9AM,
+      onTimePercentage,
+      latePercentage
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -105,41 +179,36 @@ export function StartTimeDashboard() {
 
   // Show cost center details when selected
   if (selectedCostCenter) {
+    const stats = calculateStatistics();
+    
     return (
       <div className="space-y-6">
-        {/* View Mode Toggle */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="font-semibold text-gray-900 text-xl">
-              {selectedCostCenter.company || 'Unknown Company'}
-            </h2>
-            <p className="text-gray-600 text-sm">
-              Geozone: {selectedCostCenter.geozone}
-            </p>
-            {selectedCostCenter.exit_time && (
-              <p className="text-gray-600 text-sm">
-                Exit Time: {selectedCostCenter.exit_time}
-              </p>
-            )}
-          </div>
+        {/* Cost Center Header with Statistics */}
+        <CostCenterHeader
+          costCenter={selectedCostCenter}
+          totalVehicles={stats.totalVehicles}
+          departingBefore9AM={stats.departingBefore9AM}
+          onTimePercentage={stats.onTimePercentage}
+          latePercentage={stats.latePercentage}
+        />
+
+        {/* Action Buttons */}
+        <div className="flex justify-end items-center space-x-4">
+          <Button
+            onClick={openExitTimeDialog}
+            className="bg-blue-50 hover:bg-blue-100 border-blue-600 text-blue-600"
+          >
+            <Clock className="mr-2 w-4 h-4" />
+            Update Exit Time
+          </Button>
           
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={openExitTimeDialog}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Clock className="mr-2 w-4 h-4" />
-              Update Exit Time
-            </Button>
-            
-            <Button
-              onClick={handleBackToTable}
-              variant="outline"
-              className="hover:bg-gray-50 border-gray-300 text-gray-700"
-            >
-              Back to Cost Centers
-            </Button>
-          </div>
+          <Button
+            onClick={handleBackToTable}
+            variant="outline"
+            className="hover:bg-gray-50 border-gray-300 text-gray-700"
+          >
+            Back to Cost Centers
+          </Button>
         </div>
 
         {/* View Mode Toggle Buttons */}
@@ -147,7 +216,7 @@ export function StartTimeDashboard() {
           <Button
             onClick={() => setViewMode('vehicles')}
             variant={viewMode === 'vehicles' ? 'default' : 'outline'}
-            className={viewMode === 'vehicles' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
+            className={viewMode === 'vehicles' ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-600' : 'hover:bg-blue-50 border-gray-300 text-gray-700'}
           >
             <Car className="mr-2 w-4 h-4" />
             All Vehicles
@@ -155,7 +224,7 @@ export function StartTimeDashboard() {
           <Button
             onClick={() => setViewMode('reports')}
             variant={viewMode === 'reports' ? 'default' : 'outline'}
-            className={viewMode === 'reports' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
+            className={viewMode === 'reports' ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-600' : 'hover:bg-blue-50 border-gray-300 text-gray-700'}
           >
             <FileText className="mr-2 w-4 h-4" />
             Late Vehicles
@@ -217,7 +286,7 @@ export function StartTimeDashboard() {
                 <Button
                   onClick={handleUpdateExitTime}
                   disabled={!newExitTime || isUpdatingExitTime}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-blue-50 hover:bg-blue-100 border-blue-600 text-blue-600"
                 >
                   {isUpdatingExitTime ? 'Updating...' : 'Update Exit Time'}
                 </Button>
@@ -231,13 +300,22 @@ export function StartTimeDashboard() {
 
   // Show cost centers table
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="font-semibold text-gray-900 text-2xl">Start Time Dashboard</h1>
-          <p className="text-gray-600 text-sm">Manage cost centers and view vehicle details</p>
+          <h1 className="mb-2 font-semibold text-slate-900 text-2xl">Fleet Management</h1>
+          <p className="text-slate-600 text-base">Monitor vehicle performance and manage cost centers</p>
         </div>
       </div>
+
+      {/* Stats Cards */}
+      <StatCards
+        totalVehicles={32}
+        onTimeVehicles={28}
+        lateVehicles={4}
+        departingBefore9AM={12}
+      />
 
       <CompactTable
         data={costCenters}

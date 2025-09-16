@@ -126,10 +126,10 @@ function ProtectedPageContent() {
               <Header isSidebarCollapsed={isSidebarCollapsed} onToggleSidebar={toggleSidebar} />
               
               {/* Main Content Area */}
-              <main className="flex flex-col flex-1 bg-white mt-16 overflow-hidden">
+              <main className="flex flex-col flex-1 bg-slate-50 mt-16 overflow-hidden">
                 <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
 
-                <div className="flex-1 bg-blue-100/50 p-6 overflow-auto">
+                <div className="flex-1 p-6 overflow-auto">
                   {renderTabContent()}
                 </div>
               </main>

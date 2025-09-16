@@ -49,20 +49,20 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   ];
 
   return (
-    <div className="bg-white border-gray-200 border-b">
-      <div className="flex space-x-0 overflow-x-auto">
+    <div className="bg-white border-slate-200 border-b">
+      <div className="flex space-x-0 px-6 py-0 overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors",
+              "flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200",
               activeTab === tab.id
-                ? "border-blue-600 text-blue-600 bg-blue-50"
-                : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                ? "border-slate-900 text-slate-900 bg-slate-50"
+                : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
-            <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? tab.color : "text-gray-400")} />
+            <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? "text-slate-900" : "text-slate-500")} />
             <span>{tab.label}</span>
           </button>
         ))}

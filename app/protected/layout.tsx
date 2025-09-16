@@ -6,7 +6,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="flex flex-col w-full min-h-screen">
+    <main className="flex flex-col bg-macsteel-50/30 w-full min-h-screen">
       <div className="flex flex-col flex-1 w-full">
         <nav>
           <Header isSidebarCollapsed={false} />
