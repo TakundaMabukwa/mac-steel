@@ -15,7 +15,8 @@ import { LateVehicleReports } from './LateVehicleReports';
 import { CompactTable } from '@/components/shared/CompactTable';
 import { StatCards } from './StatCards';
 import { CostCenterHeader } from './CostCenterHeader';
-import { Vehicle, getAllVehiclesWithStartTime } from '@/lib/actions/vehicles';
+import { Vehicle, getAllVehiclesWithStartTime, getGlobalVehicleStatusCounts } from '@/lib/actions/vehicles';
+import { Report, getReportsByAccountNumber } from '@/lib/actions/reports';
 import { useEffect } from 'react';
 
 export function StartTimeDashboard() {
@@ -28,6 +29,9 @@ export function StartTimeDashboard() {
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+  const [globalTotals, setGlobalTotals] = useState<{ total: number; onTime: number; late: number; pending: number } | null>(null);
 
   const handleViewCostCenter = (costCenter: MacSteelCostCenter) => {
     setSelectedCostCenter(costCenter);
@@ -72,71 +76,122 @@ export function StartTimeDashboard() {
     // This would be handled by the parent component
   };
 
-  // Load vehicles when cost center is selected
+  // Load vehicles and reports when cost center is selected
   useEffect(() => {
-    const loadVehicles = async () => {
+    const loadData = async () => {
       if (!selectedCostCenter?.new_account_number) {
         setVehicles([]);
+        setReports([]);
         return;
       }
 
       try {
         setIsLoadingVehicles(true);
-        const allVehicles = await getAllVehiclesWithStartTime();
-        // Filter vehicles by cost center
-        const costCenterVehicles = allVehicles.filter(
-          vehicle => vehicle.account_number === selectedCostCenter.new_account_number
+        setIsLoadingReports(true);
+        
+        // Load vehicles for this cost center directly from source
+        const costCenterVehicles = await getAllVehiclesWithStartTime(
+          selectedCostCenter.new_account_number
         );
         setVehicles(costCenterVehicles);
+        
+        // Load reports
+        const reportsData = await getReportsByAccountNumber(selectedCostCenter.new_account_number);
+        console.log(`Loaded ${reportsData.length} reports for cost center ${selectedCostCenter.new_account_number}:`, reportsData);
+        setReports(reportsData);
+
+        // Load global header stats from late_vehicles
+        const totals = await getGlobalVehicleStatusCounts();
+        setGlobalTotals(totals);
       } catch (err) {
-        console.error('Failed to load vehicles:', err);
+        console.error('Failed to load data:', err);
         setVehicles([]);
+        setReports([]);
       } finally {
         setIsLoadingVehicles(false);
+        setIsLoadingReports(false);
       }
     };
 
-    loadVehicles();
+    loadData();
   }, [selectedCostCenter]);
 
-  // Calculate statistics for the cost center
+  // Load global totals for header cards on initial mount (and refresh if needed)
+  useEffect(() => {
+    const loadGlobal = async () => {
+      try {
+        const totals = await getGlobalVehicleStatusCounts();
+        setGlobalTotals(totals);
+      } catch (err) {
+        console.error('Failed to load global vehicle totals:', err);
+        setGlobalTotals({ total: 0, onTime: 0, late: 0, pending: 0 });
+      }
+    };
+    loadGlobal();
+  }, []);
+
+  // Calculate statistics from vehicle details (status-based)
   const calculateStatistics = () => {
     if (!vehicles.length || !selectedCostCenter) {
+      console.log('No vehicles or cost center selected:', { vehiclesLength: vehicles.length, selectedCostCenter });
       return {
         totalVehicles: 0,
-        departingBefore9AM: 0,
         onTimePercentage: 0,
-        latePercentage: 0
+        latePercentage: 0,
+        pendingPercentage: 0
       };
     }
 
     const totalVehicles = vehicles.length;
-    
-    // Calculate vehicles departing before 9:00 AM
-    const departingBefore9AM = vehicles.filter(vehicle => {
-      if (!vehicle.start_time) return false;
-      const startTime = new Date(`2000-01-01T${vehicle.start_time}`);
-      const nineAM = new Date(`2000-01-01T09:00:00`);
-      return startTime < nineAM;
-    }).length;
 
-    // Calculate on-time vs late vehicles
-    const onTimeVehicles = vehicles.filter(vehicle => {
-      if (!vehicle.start_time || !selectedCostCenter.exit_time) return false;
-      const startTime = new Date(`2000-01-01T${vehicle.start_time}`);
-      const exitTime = new Date(`2000-01-01T${selectedCostCenter.exit_time}`);
-      return startTime <= exitTime;
-    }).length;
+    // Normalize string to compare status variants like "on-time", "on_time", etc.
+    const normalize = (s: string | null) => (s || '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/-/g, '_');
 
-    const lateVehicles = totalVehicles - onTimeVehicles;
+    const lateStatuses = new Set(['late', 'not_on_time']);
+    const onTimeStatuses = new Set(['on_time', 'on-time', 'on time', 'on_time']);
+
+    let onTimeVehicles = 0;
+    let lateVehicles = 0;
+    let pendingVehicles = 0;
+
+    vehicles.forEach(v => {
+      const s = normalize(v.status);
+      if (s === 'pending') {
+        pendingVehicles += 1;
+      } else if (lateStatuses.has(s)) {
+        lateVehicles += 1;
+      } else if (onTimeStatuses.has(s)) {
+        onTimeVehicles += 1;
+      } else {
+        // If status is unknown/null, treat as pending to avoid inflating on-time
+        pendingVehicles += 1;
+      }
+    });
+
     const onTimePercentage = totalVehicles > 0 ? Math.round((onTimeVehicles / totalVehicles) * 100) : 0;
     const latePercentage = totalVehicles > 0 ? Math.round((lateVehicles / totalVehicles) * 100) : 0;
+    const pendingPercentage = totalVehicles > 0 ? Math.round((pendingVehicles / totalVehicles) * 100) : 0;
+
+    console.log(`Stats for cost center ${selectedCostCenter.new_account_number}:`, {
+      totalVehicles,
+      onTimeVehicles,
+      lateVehicles,
+      pendingVehicles,
+      onTimePercentage,
+      latePercentage,
+      pendingPercentage
+    });
 
     return {
       totalVehicles,
-      departingBefore9AM,
       onTimePercentage,
-      latePercentage
+      latePercentage,
+      pendingPercentage
     };
   };
 
@@ -187,9 +242,9 @@ export function StartTimeDashboard() {
         <CostCenterHeader
           costCenter={selectedCostCenter}
           totalVehicles={stats.totalVehicles}
-          departingBefore9AM={stats.departingBefore9AM}
           onTimePercentage={stats.onTimePercentage}
           latePercentage={stats.latePercentage}
+          pendingPercentage={stats.pendingPercentage}
         />
 
         {/* Action Buttons */}
@@ -311,10 +366,10 @@ export function StartTimeDashboard() {
 
       {/* Stats Cards */}
       <StatCards
-        totalVehicles={32}
-        onTimeVehicles={28}
-        lateVehicles={4}
-        departingBefore9AM={12}
+        totalVehicles={globalTotals?.total || 0}
+        onTimeVehicles={globalTotals?.onTime || 0}
+        lateVehicles={globalTotals?.late || 0}
+        pendingVehicles={globalTotals?.pending || 0}
       />
 
       <CompactTable

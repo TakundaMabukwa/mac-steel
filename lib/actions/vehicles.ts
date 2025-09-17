@@ -57,6 +57,58 @@ export interface LateVehicleReport {
   created_at: string | null;
 }
 
+export interface GlobalVehicleStatusCounts {
+  total: number;
+  onTime: number;
+  late: number;
+  pending: number;
+}
+
+// Get global counts across all cost centers from late_vehicles
+export async function getGlobalVehicleStatusCounts(): Promise<GlobalVehicleStatusCounts> {
+  try {
+    const supabase = await createClient();
+
+    // Total vehicles
+    const totalQuery = await supabase
+      .from('late_vehicles')
+      .select('*', { count: 'exact', head: true });
+
+    // On-time vehicles (various naming variants)
+    const onTimeQuery = await supabase
+      .from('late_vehicles')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['on-time', 'on_time', 'on time']);
+
+    // Late vehicles (including variants)
+    const lateQuery = await supabase
+      .from('late_vehicles')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['late', 'Late', 'not_on_time']);
+
+    // Pending vehicles
+    const pendingQuery = await supabase
+      .from('late_vehicles')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
+    if (totalQuery.error || onTimeQuery.error || lateQuery.error || pendingQuery.error) {
+      console.error('Error fetching global vehicle counts:', totalQuery.error || onTimeQuery.error || lateQuery.error || pendingQuery.error);
+      throw new Error('Failed to fetch global vehicle counts');
+    }
+
+    return {
+      total: totalQuery.count || 0,
+      onTime: onTimeQuery.count || 0,
+      late: lateQuery.count || 0,
+      pending: pendingQuery.count || 0
+    };
+  } catch (error) {
+    console.error('Error in getGlobalVehicleStatusCounts:', error);
+    throw new Error('Failed to fetch global vehicle status counts');
+  }
+}
+
 export async function getVehiclesByAccountNumber(accountNumber: string): Promise<Vehicle[]> {
   try {
     const supabase = await createClient();

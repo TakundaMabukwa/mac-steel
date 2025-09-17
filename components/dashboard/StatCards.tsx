@@ -105,12 +105,13 @@ interface StatCardsProps {
   totalVehicles: number;
   onTimeVehicles: number;
   lateVehicles: number;
-  departingBefore9AM: number;
+  pendingVehicles: number;
 }
 
-export function StatCards({ totalVehicles, onTimeVehicles, lateVehicles, departingBefore9AM }: StatCardsProps) {
+export function StatCards({ totalVehicles, onTimeVehicles, lateVehicles, pendingVehicles }: StatCardsProps) {
   const onTimePercentage = totalVehicles > 0 ? Math.round((onTimeVehicles / totalVehicles) * 100) : 0;
   const latePercentage = totalVehicles > 0 ? Math.round((lateVehicles / totalVehicles) * 100) : 0;
+  const pendingPercentage = totalVehicles > 0 ? Math.round((pendingVehicles / totalVehicles) * 100) : 0;
 
   return (
     <div className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -132,19 +133,19 @@ export function StatCards({ totalVehicles, onTimeVehicles, lateVehicles, departi
       />
       <StatCard
         title="Late Vehicles"
-        value={lateVehicles}
+        value={`${latePercentage}%`}
         icon={<AlertTriangle className="w-6 h-6" />}
         color="red"
-        subtitle={`${latePercentage}% of fleet`}
+        subtitle={`${lateVehicles} vehicles`}
         trend={{ value: 3, isPositive: false }}
       />
       <StatCard
-        title="Early Departures"
-        value={departingBefore9AM}
+        title="Pending"
+        value={`${pendingPercentage}%`}
         icon={<Clock className="w-6 h-6" />}
-        color="purple"
-        subtitle="Before 9:00 AM"
-        trend={{ value: 12, isPositive: true }}
+        color="orange"
+        subtitle={`${pendingVehicles} vehicles`}
+        trend={{ value: 0, isPositive: true }}
       />
     </div>
   );

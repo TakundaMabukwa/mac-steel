@@ -115,7 +115,7 @@ function ProtectedPageContent() {
   return (
     <LiveVehicleProvider>
       <CostCenterProvider>
-        <div className="bg-blue-100 min-h-screen">
+        <div className="bg-blue-100 min-h-screen h-screen">
           <div className="flex flex-1 overflow-hidden">
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
             

@@ -8,15 +8,15 @@ import { MacSteelCostCenter } from '@/types/dashboard';
 interface CostCenterHeaderProps {
   costCenter: MacSteelCostCenter;
   totalVehicles: number;
-  departingBefore9AM: number;
   onTimePercentage: number;
   latePercentage: number;
+  pendingPercentage: number;
 }
 
 interface CircularGaugeProps {
   percentage: number;
   label: string;
-  color: 'green' | 'red';
+  color: 'green' | 'red' | 'yellow';
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -43,6 +43,11 @@ function CircularGauge({ percentage, label, color, size = 'md' }: CircularGaugeP
       stroke: '#ef4444',
       bg: '#fef2f2',
       text: '#dc2626'
+    },
+    yellow: {
+      stroke: '#f59e0b',
+      bg: '#fffbeb',
+      text: '#d97706'
     }
   };
 
@@ -96,9 +101,9 @@ function CircularGauge({ percentage, label, color, size = 'md' }: CircularGaugeP
 export function CostCenterHeader({ 
   costCenter, 
   totalVehicles, 
-  departingBefore9AM, 
   onTimePercentage, 
-  latePercentage 
+  latePercentage,
+  pendingPercentage
 }: CostCenterHeaderProps) {
   return (
     <div className="space-y-6">
@@ -133,7 +138,7 @@ export function CostCenterHeader({
       </div>
 
       {/* Stats Cards */}
-      <div className="gap-6 grid grid-cols-1 md:grid-cols-3">
+      <div className="gap-6 grid grid-cols-1 md:grid-cols-2">
         {/* Number of Vehicles */}
         <Card className="hover:shadow-lg border-2 border-gray-100 hover:border-blue-200 transition-all duration-200">
           <CardContent className="p-6">
@@ -149,25 +154,10 @@ export function CostCenterHeader({
           </CardContent>
         </Card>
 
-        {/* Departing Before 9:00 AM */}
-        <Card className="hover:shadow-lg border-2 border-gray-100 hover:border-orange-200 transition-all duration-200">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg">Departing Before 9:00 AM</h3>
-                  <Clock className="w-5 h-5 text-orange-600" />
-                </div>
-                <p className="font-bold text-orange-600 text-3xl">{departingBefore9AM}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Performance Gauges */}
         <Card className="hover:shadow-lg border-2 border-gray-100 hover:border-green-200 transition-all duration-200">
           <CardContent className="p-6">
-            <div className="flex justify-center items-center space-x-8">
+            <div className="flex justify-center items-center space-x-6">
               <CircularGauge
                 percentage={onTimePercentage}
                 label="On Time"
@@ -178,6 +168,12 @@ export function CostCenterHeader({
                 percentage={latePercentage}
                 label="Not on Time"
                 color="red"
+                size="md"
+              />
+              <CircularGauge
+                percentage={pendingPercentage}
+                label="Pending"
+                color="yellow"
                 size="md"
               />
             </div>
